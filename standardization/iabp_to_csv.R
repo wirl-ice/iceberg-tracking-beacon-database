@@ -29,6 +29,7 @@
 #  Raw data columns (case sensitive):
 # -----------------------------------
 #   - BuoyID
+#   - Date
 #   - Year 
 #   - Hour 
 #   - Min 
@@ -45,7 +46,7 @@ iabp_to_csv <- function(raw_data) {
   
   # Manufacturer sensor range values
   #---------------------------------
-  
+
   # Debug
   message("Executing script: iabp_to_csv.R")
   
@@ -55,7 +56,59 @@ iabp_to_csv <- function(raw_data) {
   # 2) Beacon type
   beacon_type <- "IABP"
   
+  # 3) Data timestamp (UTC)
+  if("Date" %in% names(raw_data)) {
+    datetime_data <- ymd_hms(raw_data$Date, truncated = 2)
+  } else {
+    datetime_data <- NA
+  }
+
+  # 5) Latitude
+  if("Lat" %in% names(raw_data)) {
+    latitude <- raw_data$Lat
+  } else {
+    latitude <- NA
+  }
   
+  # 6) Longitude
+  if("Lon" %in% names(raw_data)) {
+    longitude <- raw_data$Lon
+  } else {
+    longitude <- NA
+  }
   
+  # 10) Surface temperature
+  if("Ts" %in% names(raw_data)) {
+    ts <- raw_data$Ts
+  } else {
+    ts <- NA
+  }
   
+  # 11) Barometric pressure
+  if("BP" %in% names(raw_data)) {
+    bp <- (raw_data$BP)
+  } else {
+    bp <- NA
+  }
+
+  # Put the declared variables into a single data frame
+  processed_data <- data.frame(beacon_id, beacon_type, datetime_data, 
+                               latitude, longitude, ts, bp, row.names=NULL)
   
+  # Call data cleaning function
+  cleaned_data <- clean_data(processed_data)
+  
+  # Standardize columns
+  standardized_data <- standardize_columns(cleaned_data)
+  
+  # Calculate distance and speed
+  standardized_data <- calculate_speed(standardized_data)
+  
+  # Choose file name
+  output_file = filename
+  
+  # Choose output directory 
+  setwd(output)
+  write.csv(standardized_data, paste(output_file, ".csv", sep = ""), row.names=FALSE)
+  
+} # End function

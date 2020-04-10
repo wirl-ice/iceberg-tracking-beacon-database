@@ -1,27 +1,25 @@
 #------------------------------------------------------------------------------
-# Title: Processing of raw beacon data
+# Title: Compilation and standardization of iceberg tracking beacon data
 #
-# Created by: Anna Crawford, Carleton University
+# Author: Adam Garbo, Carleton University
 #
-# Date: 2014
+# Date: April 10, 2020
 #
-# Modified by: 
+# Contributions by: 
 #   Jill Rajewicz, April 26, 2018
-#   Adam Garbo, June 30, 2019 
+#   Anna Crawford, 2014 
 #
 # Changelog:
 #   June 18, 2019
 #     - Massive code overhaul to variables, standardized fields, comments, 
-#     - debugging output, examples, and more.
+#     debugging output, examples, and more.
 #     - Changed "Drift" variable to "raw_data"
 #     - Changed "Beacon" variable to "standard_data"
-#
-# Project: Compilation and standardization of iceberg tracking beacon data
 #
 # Description: 
 #   - Creates a  standardized CSV file with individual functions for each beacon 
 #   type/source
-#   - Takes in raw data after download from appropriate source  
+#   - Injests raw data downloaded from appropriate source  
 #   - Calls on individual functions for various other output file types
 #
 # Necessary file(s): 
@@ -119,7 +117,7 @@ source("ccgs_to_csv.R")
 source("cryologger_to_csv.R")
 source("distaz.R")
 source("gnss_to_csv.R")
-#source("iabp_to_csv.R") # TO DO: FIX DATE CONVERSION
+source("iabp_to_csv.R")
 source("navidatum_to_csv.R")
 source("oceanetic_to_csv.R")
 source("rockstar_to_csv.R")

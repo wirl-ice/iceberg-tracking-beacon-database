@@ -7,7 +7,7 @@
 #
 # Modified by: 
 #   Anna Crawdford, March 6, 2018
-#   Adam Garbo, June 18, 2019
+#   Adam Garbo, April 9, 2020
 #
 # Project: Compilation and standardization of iceberg tracking beacon data
 #
@@ -27,6 +27,9 @@ ice_island_stats <- function(standard_data) {
 
   # Debug message
   message("Executing script: ice_island_stats.R")
+  
+  # Get current date and time
+  #tm <- as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S")
   
   # Find day of year
   doy = as.numeric(strftime(standard_data$datetime_data, "%j"))
@@ -90,7 +93,8 @@ ice_island_stats <- function(standard_data) {
   summary <- as.character(paste("summary_", filename, ".txt", sep = ""))
      writeLines(c(paste("Summary information for beacon", filename, sep = " "),
                   paste("---------------------------------------------------"),
-                  paste("Start Date:", date_start, sep = " "), 
+                  #paste("Processed Date:", strftime(tm , "%Y-%m-%dT%H:%M:%S"), sep = " "), " ",
+                  paste("Start Date:", date_start, sep = " "),
                   paste("End Date:", date_end, sep = " "),
                   paste("Total Days Tracked:", days_total, sep =" "),
                   paste("Total Daily Distance Travelled (km):", distance_total_daily, sep =" "),
@@ -105,7 +109,7 @@ ice_island_stats <- function(standard_data) {
                   paste("Atmospheric Pressure (hPa):", pressure_mean, sep = " "), " ",
                   paste("Starting Latitude:", latitude_start, "Starting Longitude:", longitude_start, sep = " "), 
                   paste("Ending Latitude:", latitude_end, "Ending Longitude:", longitude_end, sep = " ")), summary)
-  
+
   # Check that text file was written
   if (!file_test("-f", paste("summary_", filename,".txt",sep=''))) {
     stop("Summary statistics file unable to be created.")

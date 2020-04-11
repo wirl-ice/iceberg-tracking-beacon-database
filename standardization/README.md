@@ -1,4 +1,4 @@
-# CIS Iceberg Tracking Beacon Database: Standardization Code
+# Iceberg Tracking Beacon Data Standardization
 
 Author: Adam Garbo, Carleton University
 
@@ -10,14 +10,14 @@ Date: 2020-04-11
 
 This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format, peforms a number of data cleaning steps and outputs a standardized CSV file.
 
-### Description:
+## Description:
 
 file types - point and line kml files, point and line shape files, and gpx files
 
 beacon_processing.R: is the parent file, and calls on various other files (described below).
 
 
-**Directory structure:**
+### Directory structure:
 
 raw_data
 deployment_file
@@ -28,7 +28,7 @@ standardized_data
 At the command line, navigate to the `/standardization` directory. 
 Keep the driver script (beacon_processing.R) in this main directory
 
-## Usage
+### Usage
 #### Syntax:
 ```
 Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>

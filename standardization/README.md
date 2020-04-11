@@ -1,9 +1,12 @@
-Author: Jill Racejiwcz
-Date: 2018-04-27
+# Introduction
 
-Title: Standardizing scripts
+Author: Adam Garbo
+Date: 2020-04-11
 
-This collection of code digests raw tracking beacon data in csv format to output a standardized csv file, does some basic cleaning, and outputs other quality added
+Title: Standardization scripts
+
+This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format and outputs a standardized CSV file, does some basic cleaning, and outputs other quality added
+
 file types - point and line kml files, point and line shape files, and gpx files
 
 Compiled by Anna Crawford, PhD Student, DGES, Carleton Univeristy
@@ -16,66 +19,66 @@ Last modified by: Anna Crawford, April 16, 2014
 Last modified by: Jill Rajewicz, April, 27 2018
 Last modified by: Adam Garbo, June 15, 2019
 
-BeaconProcessing.R is the parent file, and calls on various other files (described below).
+beacon_processing.R is the parent file, and calls on various other files (described below).
 
-3 Directories are recommended within your main beacon directory: "RawBeaconData", "ProcessedBeaconData" and "StandardizingScripts"
+3 Directories are recommended within your main beacon directory: "raw_data", "standardized_data" and "standardization"
 
 At the command line, navigate to your main directory. 
-Keep the driver script (BeaconProcessing.R) in this main directory
+Keep the driver script (beacon_processing.R) in this main directory
 
 Description:
 
-Usage:
-Rscript BeaconProcessing.R <input> <output> <prgdir> <filename> <beacon_type>
+**Syntax:**
+`Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>`
 
 Arguments:
-input           Input data folder full path(e.g. /tank/HOME/acrawford/6006/RawBeaconData)
-outputs         Output data folder for processed data (e.g. /tank/HOME/acrawford/6006/ProcessedBeaconData)
-prgdir          Folder containing scripts (except driver script) (e.g., /tank/HOME/acrawford/6006/Scripts)
-filename        Name of raw beacon data csv file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
-beaconType
+- input_path 
+  * Path to input data folder full path(e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
+- output_path      
+  * Output data folder for processed data (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data )
+- script_path          
+  * Folder containing scripts (except driver script) (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
+- filename        
+  * Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
+* beaconType 
+  *  Currently supported beacon types: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
+	  
+**Syntax example:**
 
+`Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER`
 
-Command line: 'input directory' 'output directory' 'program directory' 'filename' 'beacon type'
-**Note: apostrophes not needed at the command line**
+**Expected output:**
 
-input = where raw data is kept (use full path, e.g. /tank/HOME/acrawford/6006/RawBeaconData)
-output = where processed data will be written to (e.g., /tank/HOME/acrawford/6006/ProcessedBeaconData)
-program directory (prgdir) = where scripts (except driver script) are kept (e.g., /tank/HOME/acrawford/6006/Scripts)
-filename = name of raw beacon data csv file followed by the start year of the deployment, separated by an underscore, without extension ('12995_1997', NOT '12995_1997.csv')
-beacon type = one of: Oceanetic, Solara, Canatec, DFO, ArgosCALIB, SVPXXGSP, SVPBXGSP, SVPBXGSA, IridCALIB, Rockstar, CCGS, Navidatum, GNSS, IABP, sbd
+1) A standardized CSV file with the following column headings: 
 
-Example of command line input: 
-Rscript BeaconProcessing.R /tank/HOME/acrawford/6007/RawBeaconData /tank/HOME/acrawford/6007/ProcessedBeaconData /tank/HOME/acrawford/StandardizingScripts 12995_1997 ArgosCALIB 
-
-Expected output:
-
-1) A standardized csv file with the column headings: 
-  BeaconID
-  BeaconType
-  DataDate_UTC
-  TransmissionDate_UTC
-  Latitude
-  Longitude
-  VBatt
-  Internal_Temp
-  Surface_Temp
-  Air_Temp
-  BP
-  LocAccuracy
-  MessageIndex
-  Satellites
-  GPSDelay
-  SNR
-  TTFF
+* beacon_id
+* beacon_type
+* datetime_data
+* datetime_transmit
+* latitude
+* longitude
+* vbat
+* ta
+* ti
+* ts
+* bp
+* pitch
+* roll
+* heading
+* satellites
+* loc_accuarcy
+* message_index
+* gps_delay
+* snr
+* ttff
   
-2) shp/shx/prj/dbf files (line and point), gpx files (line and point), kml files (line and point), 
+2. shp/shx/prj/dbf files (line and point), gpx files (line and point), kml files (line and point), 
 
-3) A pdf with: PolarPlot (png), SpeedPlot (png) and cummulative speed probability plot (png), 
+3. A pdf with: PolarPlot (png), SpeedPlot (png) and cummulative speed probability plot (png), 
 
-4) A text ice island statistics file
+4. A text ice island statistics file
 
-Troubleshooting: 
+**Troubleshooting:**
 1) Some of the 'beacon types' are actually data delivery types (e.g. sbd) so need to make sure beacon type is manually entered
 
 2) Canatec beacons are inconsistent - some have hh:mm:ss while some have hh:mm in the timestamp. Need to go into script and just comment out correct line to run it, depending on timestamp format
@@ -149,30 +152,9 @@ Script should:
 #4) fill data gaps? if necessary
 
 
-
-
-
 June 15, 2019
 - Massive overhaul of all scripts to move to new standardized column names
 - Reworked scripts to create shape files so that full IMEI unique identifiers are used
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

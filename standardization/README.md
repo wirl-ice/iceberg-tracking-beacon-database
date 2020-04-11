@@ -2,6 +2,8 @@
 
 Author: Adam Garbo
 
+Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
+
 Date: 2020-04-11
 
 ## Introduction
@@ -22,20 +24,19 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
 ├── analysis
 │   ├── R				# R code for performing spatial analyses
 │   └── Shapefiles			# Shapefiles used in spatial analyses
-├── data				# Raw and prcocessed tracking beacon data
-│   └── <year>				# Year of data collection
-│       └── <IMEI>			# IMEI or tracking beacon unique identifier
-│           ├── README.txt		# Text file of 
-│           ├── documentation		# Associated project documentation, where available
-│           ├── photos			# Photos of tracking beacon deployments, where available
+├── data				
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+│           ├── documentation		# Related project documentation
+│           ├── photos			# Photos of tracking beacon deployments
 │           ├── raw_data		# Raw tracking beacon data
 │           │   ├── deployment_file	# Data prepared for ingestion to standardizations scripts
 │           │   └── original_file	# Original, unmodified tracking beacon data
 │           └── standardized_data	# Processed tracking beacon data CSV file
-├── documentation
-│   └── manuals				# Tracking beacon instrumentation manuals, where available
+├── documentation			
+│   └── manuals				# Available tracking beacon instrumentation manuals
 ├── output_data
-│   ├── shapefiles			
+│   ├── shapefiles			# Shapefiles (line and points) of tracking beacon trajectories
 │   └── database			# Database snapshots in CSV format 
 └── scripts
     ├── download_decode			# Python code to download and process SBD data
@@ -48,12 +49,12 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
 
 ## Usage:
 
-### Installation
+### Installation:
 
-The necessary R packages are listed on line 40 of beacon_processing.R
-https://github.com/adamgarbo/CIS_Iceberg_Tracking_Beacon_Database/blob/367f82ced80b76886deb97f40e08c529fc0ea186/standardization/beacon_processing.R#L40
+The necessary R packages are listed on line 40 of [beacon_processing.R](
+https://github.com/adamgarbo/CIS_Iceberg_Tracking_Beacon_Database/blob/367f82ced80b76886deb97f40e08c529fc0ea186/standardization/beacon_processing.R#L40)
 
-At the Terminal command line, navigate to the `./scripts/standardization` directory. Ensure that parent file, beacon_processing.R, resides within this directory. 
+At the Terminal command line interface, navigate to the `./scripts/standardization` directory. Ensure that parent file, beacon_processing.R, resides within this directory. 
 
 beacon_processing.R will call other scripts as needed. A description of these scripts can be found below.
 
@@ -124,13 +125,12 @@ ttff
 ## Troubleshooting:
 1. Some of the 'beacon types' are actually data delivery types (e.g. sbd) so need to make sure beacon type is manually entered
 2. Canatec beacons are inconsistent - some have hh:mm:ss while some have hh:mm in the timestamp. Need to go into script and just comment out correct line to run it, depending on timestamp format
-3. If the following statement is written to the log: 
+3. If the error below is written to the debug log file, navigate to the `../standardized_data` directory and remove the .kml files that were created. They are unable to be overwritten. 
 ```
 "Error in writeOGR(Dataset, paste(getwd(), paste(filename, "_pt", ".kml",  : layer exists, use a new layer name
 Calls: csv2kml -> writeOGR
 Execution halted"
 ```
-Navigate to the `standardized_data` directory and remove the .kml files that were created. They are unable to be overwritten. 
 4. Possible errors: Assertion statement on line 167 (Validation function). If comes back false in command line window it means that there is an error with the standardized csv column data types.
 
 ### Error handling and logging
@@ -152,15 +152,12 @@ Errors are logged to the the debug.txt file in the `../standardized_data` output
 ### Adding support for new beacon types: 
 
 1. Create a new function script to standardize the raw CSV data to the standardized format (e.g. cryologger_to_csv, svp_to_csv)
-
 2. Add this function to the sourced functions in beacon_processing.R (line 111-127)
-
 3. Add this function to script `standardize_data.R`, along with the appropriate `else if` statement:
 ```R
 else if (beacon_type == "CRYOLOGGER") {
     cryologger_to_csv(raw_data)
 ```
-
 4. Add the beacon_type to the list of valid command line options at line 190-207: 
 ```R
 # Check if beacon_type argument is valid. Add additional beacon_type as required.
@@ -183,26 +180,6 @@ valid = c("BIO",
           "WIRL")
 ```
 
-
-**beacon_cleaning:**
-
-This is a start at a script to further clean and quality control beacon data.
-
-The aim of this script is to diagnose when a beacon file should be terminated
-( e.g. fell off target into water, or picked up by ship)
-
-#input: beacon file with standardized headings (beginning may be trimmed according to deployment notes/observations etc)
-
-Script should:
-
-1. Calculate a running standard deviation of temperature (where applicable)
-#plot temp/std dev/running mean  of temp
-2. Calculate distance travelled and speed - then identify points where there are big changes in these things - impossible speeds
- or jumps in speed or decline in temp variation
-3. Smooth beacon tracks using a Kalman filter
-4. Fill data gaps? if necessary
-
-
 ### Changelog:
 April 27, 2018
 * New beacon types added
@@ -217,12 +194,5 @@ June 15, 2019
 April 11, 2020
 * Documentation re-written to reflect significant changes to the overall project
 
-Compiled in February 2014
-Modified by: Anna Crawford, April 16, 2014
-Modified by: Jill Rajewicz, April, 27 2018
-Modified by: Adam Garbo, June 15, 2019
-
-Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
-
-
 ## Publications
+* To follow.

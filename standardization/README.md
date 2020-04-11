@@ -1,6 +1,8 @@
 # Introduction
 
-Author: Adam Garbo
+Author: Adam Garbo, Carleton University
+
+Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
 
 Date: 2020-04-11
 
@@ -22,31 +24,31 @@ standardized_data
 At the command line, navigate to the `/standardization` directory. 
 Keep the driver script (beacon_processing.R) in this main directory
 
-###Description:
+### Description:
 
-**Syntax:**
+#### Syntax:
 
 `Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>`
 
-**Arguments:**
+#### Arguments:
 * input_path 
   * Path to input data folder full path(e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
 * output_path      
   * Output data folder for processed data (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data )
 * script_path          
-  * Folder containing scripts (except driver script) (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
+  * Folder containing standardization scripts (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
 * filename        
   * Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
 * beaconType 
   *  Currently supported beacon types: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
 	  
-**Syntax example:**
+#### Syntax example:
 
 `Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER`
 
-**Expected output:**
+#### Expected output:
 
-1) A standardized CSV file with the following column headings: 
+1. A standardized CSV file with the following column headings: 
 
 * beacon_id
 * beacon_type
@@ -75,7 +77,7 @@ Keep the driver script (beacon_processing.R) in this main directory
 
 4. A text ice island statistics file
 
-**Troubleshooting:**
+### Troubleshooting:
 1. Some of the 'beacon types' are actually data delivery types (e.g. sbd) so need to make sure beacon type is manually entered
 2. Canatec beacons are inconsistent - some have hh:mm:ss while some have hh:mm in the timestamp. Need to go into script and just comment out correct line to run it, depending on timestamp format
 3. If this statement is written to the log: "Error in writeOGR(Dataset, paste(getwd(), paste(filename, "_pt", ".kml",  : 
@@ -87,9 +89,9 @@ Execution halted"
 APRIL 2018: This function is not working. Commented out for now.
 5. Necessary packages are listed between Lines 31-44 of BeaconProcessing.R. Please load these if they are not already on your system. 
 
-To add another beacon type, you must: 
+### Adding support for new beacon types: 
 
-1. Create a new function script to standardize the raw csv data to the standardized format (see Canatec2csv, ArgosCALIB2csv, etc. for 
+1. Create a new function script to standardize the raw CSV data to the standardized format (see Canatec2csv, ArgosCALIB2csv, etc. for 
 templates)
 2. Add this function to the sourced functions in BeaconProcessing.R (line 58)
 3. Add this function to script 'raw2csv.R', along with the appropriate 'if' statement (e.g., if (beaconType == "Canatec") {
@@ -97,10 +99,10 @@ templates)
 4. Add the beaconType to the list of valid command line options at line 125: valid = c("ArgosCALIB", "DFO", "Oceanetics", "Canatec")
 5. Add the beaconType to the list of available options at the command line (beginning of this document). 
 
-**Error handling and logging**
+### Error handling and logging
 Errors are logged to the output directory in BeaconProcessingLog.txt. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. No logging will occur if there is no errors or warnings are initiated.  
 
-**Errors that will halt to program include:**
+### Errors that will halt to program include:
 1. An incorrect number of command line arguments
 2. beacon_type argument is incorrect (not a possible option)
 3. If there is an error reading in the beacon data
@@ -108,8 +110,7 @@ Errors are logged to the output directory in BeaconProcessingLog.txt. It is appe
 5. Attempting to force the program to overwrite kml files in the output directry 
 6. Rplots.pdf not being written
 
-**Errors that will log but allow the program to continue include:**
-
+### Errors that will log but allow the program to continue include:
 1. The datetime columns of the standardized CSV being the incorrect format
 2. The datetime columns of the standardized CSV not being in chronological order
 
@@ -125,36 +126,27 @@ The aim of this script is to diagnose when a beacon file should be terminated
 
 Script should:
 
-#1) calculate a running standard deviation of temperature (where applicable)
+1. Calculate a running standard deviation of temperature (where applicable)
 #plot temp/std dev/running mean  of temp
-#2) calculate distance travelled and speed - then identify points where there are big changes in these things - impossible speeds
+2. Calculate distance travelled and speed - then identify points where there are big changes in these things - impossible speeds
  or jumps in speed or decline in temp variation
-
-#3) smooth beacon tracks using a Kalman filter
-
-#4) fill data gaps? if necessary
+3. Smooth beacon tracks using a Kalman filter
+4. Fill data gaps? if necessary
 
 
+## Changelog:
+April 27, 2018
+* New beacon types added
+* New fields added to standardized CSV
+* Additional cleaning step added to remove records with repeated time stamps
+* Removed records exceeding beacon sensor ranges
 June 15, 2019
-- Massive overhaul of all scripts to move to new standardized column names
-- Reworked scripts to create shape files so that full IMEI unique identifiers are used
-
-Compiled by Anna Crawford, PhD Student, DGES, Carleton Univeristy
-Previously written scripts provided by Derek Mueller, Assistant Professor, DGES, Carleton University
-Modified by Jill Rajewicz in 2017-2018 (new beacon types added, new fields added to standardized csv, additional cleaning step added to get rid of records with repeated time stamps, records
-removed which exceed beacon sensor ranges).
+* Complete overhaul of all scripts to move to new standardized column names
+* Reworked scripts to create shape files so that full IMEI unique identifiers are used
+April 11, 2020
+* Documentation re-written to reflect significant changes to the overall project
 
 Compiled in February 2014
-Last modified by: Anna Crawford, April 16, 2014
-Last modified by: Jill Rajewicz, April, 27 2018
-Last modified by: Adam Garbo, June 15, 2019
-
-
-
-
-
-
-
-
-
-
+Modified by: Anna Crawford, April 16, 2014
+Modified by: Jill Rajewicz, April, 27 2018
+Modified by: Adam Garbo, June 15, 2019

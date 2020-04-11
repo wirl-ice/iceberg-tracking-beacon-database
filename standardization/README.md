@@ -150,9 +150,11 @@ April 27, 2018
 * New fields added to standardized CSV
 * Additional cleaning step added to remove records with repeated time stamps
 * Removed records exceeding beacon sensor ranges
+
 June 15, 2019
 * Complete overhaul of all scripts to move to new standardized column names
 * Reworked scripts to create shape files so that full IMEI unique identifiers are used
+
 April 11, 2020
 * Documentation re-written to reflect significant changes to the overall project
 

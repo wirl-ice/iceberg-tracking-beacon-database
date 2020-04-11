@@ -48,9 +48,9 @@ Keep the driver script (beacon_processing.R) in this main directory
 
 `Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER`
 
-#### Expected output:
+### Outputs:
 
-1. A standardized CSV file with the following column headings: 
+**1. A standardized CSV file with the following column headings:**
 
 * beacon_id
 * beacon_type
@@ -101,18 +101,17 @@ APRIL 2018: This function is not working. Commented out for now.
 
 ### Adding support for new beacon types: 
 
-1. Create a new function script to standardize the raw CSV data to the standardized format (see Canatec2csv, ArgosCALIB2csv, etc. for 
-templates)
-2. Add this function to the sourced functions in BeaconProcessing.R (line 58)
-3. Add this function to script 'raw2csv.R', along with the appropriate 'if' statement (e.g., if (beaconType == "Canatec") {
+1. Create a new function script to standardize the raw CSV data to the standardized format (e.g. cryologger_to_csv, svp_to_csv)
+2. Add this function to the sourced functions in beacon_processing.R (line 111-127)
+3. Add this function to script 'raw_csv.R', along with the appropriate 'if' statement (e.g., if (beaconType == "Canatec") {
       Canatec2csv(Drift))
-4. Add the beaconType to the list of valid command line options at line 125: valid = c("ArgosCALIB", "DFO", "Oceanetics", "Canatec")
-5. Add the beaconType to the list of available options at the command line (beginning of this document). 
+4. Add the beacon_type to the list of valid command line options at line 125: valid = c("ArgosCALIB", "DFO", "Oceanetics", "Canatec")
+5. Add the beacon_type to the list of available options at the command line (beginning of this document). 
 
 ### Error handling and logging
-Errors are logged to the output directory in BeaconProcessingLog.txt. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. No logging will occur if there is no errors or warnings are initiated.  
+Errors are logged to the the debug.txt file in the /standardized_data output directory. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. Logging will occur even if no errors or warnings are initiated.  
 
-### Errors that will halt to program include:
+#### Errors that will halt to program include:
 1. An incorrect number of command line arguments
 2. beacon_type argument is incorrect (not a possible option)
 3. If there is an error reading in the beacon data
@@ -120,7 +119,7 @@ Errors are logged to the output directory in BeaconProcessingLog.txt. It is appe
 5. Attempting to force the program to overwrite kml files in the output directry 
 6. Rplots.pdf not being written
 
-### Errors that will log but allow the program to continue include:
+#### Errors that will log but allow the program to continue include:
 1. The datetime columns of the standardized CSV being the incorrect format
 2. The datetime columns of the standardized CSV not being in chronological order
 

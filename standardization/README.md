@@ -46,7 +46,13 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
 
 
 
-### Usage
+## Usage:
+
+### Installation
+
+The necessary R packages are listed on line 40 of beacon_processing.R
+https://github.com/adamgarbo/CIS_Iceberg_Tracking_Beacon_Database/blob/367f82ced80b76886deb97f40e08c529fc0ea186/standardization/beacon_processing.R#L40
+
 At the Terminal command line, navigate to the `./scripts/standardization` directory. Ensure that parent file, beacon_processing.R, resides within this directory. 
 
 beacon_processing.R will call other scripts as needed. A description of these scripts can be found below.
@@ -74,9 +80,11 @@ Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> 
 Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER
 ```
 
-### Outputs:
+## Outputs:
 
-**1. A standardized CSV file will be produced with the following column headings:**
+**1. Standardized CSV file**
+
+A CSV will be produced with the following column headings:
 ```
 beacon_id
 beacon_type
@@ -113,19 +121,34 @@ ttff
 **5. Debugging log**
 * A text file that includes information debugging information that is produced when each R script is called. Can be used to troubleshoot issues with standardizing a particular dataset or beacon type.
 
-### Troubleshooting:
+## Troubleshooting:
 1. Some of the 'beacon types' are actually data delivery types (e.g. sbd) so need to make sure beacon type is manually entered
 2. Canatec beacons are inconsistent - some have hh:mm:ss while some have hh:mm in the timestamp. Need to go into script and just comment out correct line to run it, depending on timestamp format
-3. If this statement is written to the log: "Error in writeOGR(Dataset, paste(getwd(), paste(filename, "_pt", ".kml",  : 
-  layer exists, use a new layer name
+3. If the following statement is written to the log: 
+```
+"Error in writeOGR(Dataset, paste(getwd(), paste(filename, "_pt", ".kml",  : layer exists, use a new layer name
 Calls: csv2kml -> writeOGR
 Execution halted"
-	Go into your ProcessedBeaconData directory and remove kml files already written for that beacon. kml files cannot be overwritten. 
+```
+Navigate to the `standardized_data` directory and remove the .kml files that were created. They are unable to be overwritten. 
 4. Possible errors: Assertion statement on line 167 (Validation function). If comes back false in command line window it means that there is an error with the standardized csv column data types.
-APRIL 2018: This function is not working. Commented out for now.
-5. Necessary packages are listed between Lines 31-44 of BeaconProcessing.R. Please load these if they are not already on your system. 
 
-## Contributing
+### Error handling and logging
+Errors are logged to the the debug.txt file in the `../standardized_data` output directory. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. Logging will occur even if no errors or warnings are initiated.  
+
+#### Errors that will halt to program include:
+1. An invalid number of command line arguments
+2. An invalid `beacon_type` argument
+3. If an error is encountered while reading in the beacon data
+4. The standardized CSV columns have incorrect data types
+5. If the program attempts to overwrite .kml files in the output directry 
+6. Rplots.pdf not being written correctly
+
+#### Errors that will log but allow the program to continue include:
+1. The datetime columns of the standardized CSV being the incorrect format
+2. The datetime columns of the standardized CSV not being in chronological order
+
+## Contributing to the Iceberg Tracking Beacon Database
 ### Adding support for new beacon types: 
 
 1. Create a new function script to standardize the raw CSV data to the standardized format (e.g. cryologger_to_csv, svp_to_csv)
@@ -159,21 +182,6 @@ valid = c("BIO",
           "SVP-I-XXGS-LP",
           "WIRL")
 ```
-
-### Error handling and logging
-Errors are logged to the the debug.txt file in the /standardized_data output directory. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. Logging will occur even if no errors or warnings are initiated.  
-
-#### Errors that will halt to program include:
-1. An incorrect number of command line arguments
-2. beacon_type argument is incorrect (not a possible option)
-3. If there is an error reading in the beacon data
-4. The standardized csv columns having incorrect data types
-5. Attempting to force the program to overwrite kml files in the output directry 
-6. Rplots.pdf not being written
-
-#### Errors that will log but allow the program to continue include:
-1. The datetime columns of the standardized CSV being the incorrect format
-2. The datetime columns of the standardized CSV not being in chronological order
 
 
 **beacon_cleaning:**
@@ -215,3 +223,6 @@ Modified by: Jill Rajewicz, April, 27 2018
 Modified by: Adam Garbo, June 15, 2019
 
 Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
+
+
+## Publications

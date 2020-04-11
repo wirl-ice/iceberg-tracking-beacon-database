@@ -28,9 +28,11 @@ standardized_data
 At the command line, navigate to the `/standardization` directory. 
 Keep the driver script (beacon_processing.R) in this main directory
 
+## Usage
 #### Syntax:
-
-`Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>`
+```
+Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>
+```
 
 #### Arguments:
 * input_path: 
@@ -46,7 +48,9 @@ Keep the driver script (beacon_processing.R) in this main directory
 	  
 #### Syntax example:
 
-`Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER`
+```
+Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER
+```
 
 ### Outputs:
 

@@ -1,4 +1,4 @@
-# Introduction
+# CIS Iceberg Tracking Beacon Database: Standardization Code
 
 Author: Adam Garbo, Carleton University
 
@@ -6,7 +6,7 @@ Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton Universit
 
 Date: 2020-04-11
 
-## Iceberg Tracking Beacon Database: Standardization Code
+## Introduction
 
 This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format, peforms a number of data cleaning steps and outputs a standardized CSV file.
 

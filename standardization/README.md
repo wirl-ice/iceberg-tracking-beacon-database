@@ -19,11 +19,32 @@ beacon_processing.R: is the parent file, and calls on various other files (descr
 
 ### Directory structure:
 
-raw_data
-deployment_file
-original_file
-standardized_data
-
+```
+.
+├── analysis
+│   ├── R				# R code for performing spatial analyses
+│   └── Shapefiles			# Shapefiles used in spatial analyses
+├── data				# Raw and prcocessed tracking beacon data
+│   └── <year>				# Year of data collection
+│       └── <IMEI>			# IMEI or tracking beacon unique identifier
+│           ├── README.txt		# Text file of 
+│           ├── documentation		# Associated project documentation, where available
+│           ├── photos			# Photos of tracking beacon deployments, where available
+│           ├── raw_data		# Raw tracking beacon data
+│           │   ├── deployment_file	# Data prepared for ingestion to standardizations scripts
+│           │   └── original_file	# Original, unmodified tracking beacon data
+│           └── standardized_data	# Processed tracking beacon data CSV file
+├── documentation
+│   └── manuals				# Tracking beacon instrumentation manuals, where available
+├── output_data
+│   ├── shapefiles			
+│   └── database			# Database snapshots in CSV format 
+└── scripts
+    ├── download_decode			# Python code to download and process SBD data
+    ├── python				# Python scripts to merge standardized CSV files
+    └── standardization			# R scripts to process raw tracking beacon data
+    
+```
 
 At the command line, navigate to the `/standardization` directory. 
 Keep the driver script (beacon_processing.R) in this main directory

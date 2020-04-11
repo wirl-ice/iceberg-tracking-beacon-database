@@ -8,11 +8,14 @@ Date: 2020-04-11
 
 ## Iceberg Tracking Beacon Database: Standardization Code
 
-This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format and outputs a standardized CSV file, does some basic cleaning, and outputs other quality added
+This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format, peforms a number of data cleaning steps and outputs a standardized CSV file.
+
+### Description:
 
 file types - point and line kml files, point and line shape files, and gpx files
 
 beacon_processing.R: is the parent file, and calls on various other files (described below).
+
 
 **Directory structure:**
 
@@ -21,26 +24,25 @@ deployment_file
 original_file
 standardized_data
 
+
 At the command line, navigate to the `/standardization` directory. 
 Keep the driver script (beacon_processing.R) in this main directory
-
-### Description:
 
 #### Syntax:
 
 `Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>`
 
 #### Arguments:
-* input_path 
-  * Path to input data folder full path(e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
+* input_path: 
+  * Full path to input data folder (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
 * output_path      
   * Output data folder for processed data (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data )
 * script_path          
   * Folder containing standardization scripts (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
 * filename        
   * Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
-* beaconType 
-  *  Currently supported beacon types: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
+* beacon_type 
+  *  Currently supported beacon types include: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
 	  
 #### Syntax example:
 
@@ -71,11 +73,19 @@ Keep the driver script (beacon_processing.R) in this main directory
 * snr
 * ttff
   
-2. shp/shx/prj/dbf files (line and point), gpx files (line and point), kml files (line and point), 
+2. Geospatial products:
+* .shp/.shx/.prj/.dbf files (line and point)
+* .gpx files (line and point)
+* .kml files (line and point) 
 
-3. A pdf with: PolarPlot (png), SpeedPlot (png) and cummulative speed probability plot (png), 
+3. Graphic plots
+* A PDF file containing: PolarPlot (.png), SpeedPlot (.png) and cummulative speed probability plot (.png), 
 
-4. A text ice island statistics file
+4. Statistics 
+* A text ice island statistics file.
+
+5. Debugging log
+* A text file that includes information debugging information that is produced when each R script is called. Can be used to troubleshoot issues with standardizing a particular dataset or beacon type.
 
 ### Troubleshooting:
 1. Some of the 'beacon types' are actually data delivery types (e.g. sbd) so need to make sure beacon type is manually entered
@@ -134,7 +144,7 @@ Script should:
 4. Fill data gaps? if necessary
 
 
-## Changelog:
+### Changelog:
 April 27, 2018
 * New beacon types added
 * New fields added to standardized CSV

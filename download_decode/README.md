@@ -1,6 +1,10 @@
+# Download and decode
+
+## Introduction
 This collection of code is used to query an email account and download and decode SBD messages from MetOcean and Oceanetics SBD beacons. 
 
-Contains:
+## Description
+Contains: 
 download_and_decode.py
 sbd_decoder.py
 metocean_decoder.py
@@ -13,7 +17,7 @@ Written in python by Derek Mueller and Cindy Lopes in 2012. Modified by Jill Raj
 
 Note that password and username for email account has been redacted and would need to be filled in to use.
 
-
+## Usage
 
 argos_to_csv.py
 ----------------

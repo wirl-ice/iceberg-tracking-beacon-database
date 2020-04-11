@@ -1,8 +1,6 @@
 # Iceberg Tracking Beacon Data Standardization
 
-Author: Adam Garbo, Carleton University
-
-Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
+Author: Adam Garbo
 
 Date: 2020-04-11
 
@@ -12,10 +10,10 @@ This collection of code ingests raw tracking beacon data in comma-separated valu
 
 ## Description:
 
-file types - point and line kml files, point and line shape files, and gpx files
+The R programming language was used to write a number of scripts to perform various data ingestion and cleaning tasks. 
 
-beacon_processing.R: is the parent file, and calls on various other files (described below).
 
+The directory structure of the Iceberg Tracking Beacon Database is as follows:
 
 ### Directory structure:
 
@@ -46,12 +44,15 @@ beacon_processing.R: is the parent file, and calls on various other files (descr
     
 ```
 
-At the command line, navigate to the `/standardization` directory. 
-Keep the driver script (beacon_processing.R) in this main directory
+
 
 ### Usage
+At the Terminal command line, navigate to the `./scripts/standardization` directory. Ensure that parent file, beacon_processing.R, resides within this directory. 
+
+beacon_processing.R will call other scripts as needed. A description of these scripts can be found below.
+
 #### Syntax:
-```
+```R
 Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> <beacon_type>
 ```
 
@@ -69,13 +70,13 @@ Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> 
 	  
 #### Syntax example:
 
-```
+```R
 Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER
 ```
 
 ### Outputs:
 
-**1. A standardized CSV file with the following column headings:**
+**1. A standardized CSV file will be produced with the following column headings:**
 ```
 beacon_id
 beacon_type
@@ -98,18 +99,18 @@ gps_delay
 snr
 ttff
 ```
-2. Geospatial products:
+**2. Geospatial outputs:**
 * .shp/.shx/.prj/.dbf files (line and point)
 * .gpx files (line and point)
 * .kml files (line and point) 
 
-3. Graphic plots
+**3. Graphic plots**
 * A PDF file containing: PolarPlot (.png), SpeedPlot (.png) and cummulative speed probability plot (.png), 
 
-4. Statistics 
+**4. Statistics**
 * A text ice island statistics file.
 
-5. Debugging log
+**5. Debugging log**
 * A text file that includes information debugging information that is produced when each R script is called. Can be used to troubleshoot issues with standardizing a particular dataset or beacon type.
 
 ### Troubleshooting:
@@ -124,14 +125,40 @@ Execution halted"
 APRIL 2018: This function is not working. Commented out for now.
 5. Necessary packages are listed between Lines 31-44 of BeaconProcessing.R. Please load these if they are not already on your system. 
 
+## Contributing
 ### Adding support for new beacon types: 
 
 1. Create a new function script to standardize the raw CSV data to the standardized format (e.g. cryologger_to_csv, svp_to_csv)
+
 2. Add this function to the sourced functions in beacon_processing.R (line 111-127)
-3. Add this function to script 'raw_csv.R', along with the appropriate 'if' statement (e.g., if (beaconType == "Canatec") {
-      Canatec2csv(Drift))
-4. Add the beacon_type to the list of valid command line options at line 125: valid = c("ArgosCALIB", "DFO", "Oceanetics", "Canatec")
-5. Add the beacon_type to the list of available options at the command line (beginning of this document). 
+
+3. Add this function to script `standardize_data.R`, along with the appropriate `else if` statement:
+```R
+else if (beacon_type == "CRYOLOGGER") {
+    cryologger_to_csv(raw_data)
+```
+
+4. Add the beacon_type to the list of valid command line options at line 190-207: 
+```R
+# Check if beacon_type argument is valid. Add additional beacon_type as required.
+valid = c("BIO",
+          "CALIB_ARGOS",
+          "CALIB_IRIDIUM",
+          "CANATEC",
+          "CCGS",
+          "CRYOLOGGER",
+          "GNSS",
+          "IABP",
+          "NAVIDATUM",
+          "OCEANETIC",
+          "PPP",
+          "ROCKSTAR",
+          "SOLARA",
+          "SVP-I-BXGSA-L-AD",
+          "SVP-I-BXGS-LP",
+          "SVP-I-XXGS-LP",
+          "WIRL")
+```
 
 ### Error handling and logging
 Errors are logged to the the debug.txt file in the /standardized_data output directory. It is appendable and messages will be compiled with every run. A timestamp is logged with each run WHERE AN ERROR OCCURS. Logging will occur even if no errors or warnings are initiated.  
@@ -186,3 +213,5 @@ Compiled in February 2014
 Modified by: Anna Crawford, April 16, 2014
 Modified by: Jill Rajewicz, April, 27 2018
 Modified by: Adam Garbo, June 15, 2019
+
+Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University

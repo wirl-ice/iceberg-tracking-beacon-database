@@ -3,7 +3,7 @@
 #
 # Created by: Adam Garbo
 #
-# Date: April 17, 2020
+# Date: April 23, 2020
 #
 # Changelog:
 #
@@ -56,7 +56,7 @@ data_subset <- subset(data, (latitude >= 40 & latitude <= 90) & (longitude >= -9
 coast_sf <- st_read("coast_poly.shp")
 
 # Convert data to simple feature (sf)
-#points_sf <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326) # Entire database
+points_sf <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326) # Entire database
 points_sf <- st_as_sf(data_subset, coords = c("longitude", "latitude"), crs = 4326) # data subset
 
 # Get geometry from sf objects
@@ -81,14 +81,14 @@ extents_points <- st_bbox(points_sf)
 
 #----------------------------------------------------
 # Optional: Manual grid creation based on coordinates
-new_bb = c(-90, 40, -40, 90)
+new_bb = c(-80, 45, -40, 90)
 names(new_bb) = c("xmin", "ymin", "xmax", "ymax")
 attr(new_bb, "class") = "bbox"
 e <- st_as_sfc(new_bb)
 #----------------------------------------------------
 
 # Create extent object for points
-e <- st_as_sfc(st_bbox(extents_points))
+#e <- st_as_sfc(st_bbox(extents_points))
 
 # Create grid over the bounding box of points sf object
 grid <- st_make_grid(e, cellsize = c(1, 0.5)) %>%
@@ -127,7 +127,7 @@ plot(coast_clipped$geometry)
 # Transform features to LCC coordinate reference system
 coast_sf <- st_transform(coast_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
 points_sf <- st_transform(points_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-coast_clipped <- st_transform(coast_clipped, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
+coast_clipped <- st_transform(coast_clipped, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-60, ellps=WGS84")
 grid <- st_transform(grid, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
 
 # Plot shapefiles
@@ -197,7 +197,7 @@ m <- ggplot() +
   coord_sf(expand = FALSE)
 
 # Plot map
-#
+#m
 
 # Plot map with colour gradient
 m + scale_fill_gradientn(colours = pal(16), name = "mean speed (m/s)", limits = c(0,1), oob = squish) + 
@@ -225,9 +225,42 @@ n
 
 # Create mean speed map (old basic version)
 o <- ggplot() +
-  geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
+  #geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
+  #geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
+  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
+  #geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = .5, stroke = 0) +
+  theme(panel.border = element_rect(linetype = "solid", fill = NA),
+        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
+        panel.background = element_rect(fill = "aliceblue"),
+        legend.position = "none") +
+  annotation_scale(location = "bl", width_hint = 0.5) + 
+  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering)
+  #coord_sf(expand = FALSE)
+
+# Plot map
+o
+
+# Create map with limits (no clipping)
+n <- ggplot() +
   geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
   #geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
-  theme_bw()
-  # Plot map
-o
+  annotation_scale(location = "bl", width_hint = 0.5) + 
+  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
+  theme(panel.border = element_rect(linetype = "solid", fill = NA),
+        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
+        panel.background = element_rect(fill = "aliceblue")) +
+  coord_sf(crs = st_crs("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-75 +x_0=0 +y_0=-8000000 +ellps=WGS84 +datum=WGS84 +units=m +no_defs no_defs"),
+           xlim = c(xlim[1], ylim[2]), ylim = c(xlim[2], ylim[1]), expand = FALSE, clip = "on")
+
+# Plot map
+n
+
+from ="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
+to = "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-75 +x_0=0 +y_0=-8000000 +ellps=WGS84 +datum=WGS84 +units=m +no_defs no_defs"
+x_pts = cbind(45, -85)
+y_pts = cbind(80, -45)
+xlim = sf_project(from, to, x_pts)
+ylim = sf_project(from, to, y_pts)
+
+xlim
+ylim

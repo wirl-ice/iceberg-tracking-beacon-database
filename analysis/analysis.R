@@ -3,7 +3,7 @@
 #
 # Created by: Adam Garbo
 #
-# Date: April 23, 2020
+# Date: April 24, 2020
 #
 # Changelog:
 #
@@ -45,7 +45,25 @@ data <- read_csv("~/Desktop/cis_iceberg_tracking_beacon_database/output_data/dat
 # Subset data -----------------------------------------------------------------
 
 # Subset by beacon_id
-#data_subset <- subset(data, beacon_id == "300434063415110_2018")
+data_subset <- subset(data, beacon_id == ("300434063415110_2018"))
+
+# Subset by multiple beacon_id 
+data_subset <- subset(data, (beacon_id %in% c("300434063418130_2018",
+                                              "300434063415110_2018",
+                                              "300434063419120_2018",
+                                              "300434063411050_2018",
+                                              "300434063415160_2018",
+                                              "300434063416060_2018",
+                                              "300234063265700_2019",
+                                              "300234065254740_2019",
+                                              "300434063496100_2019",
+                                              "300434063392350_2019",
+                                              "300434063292950_2019",
+                                              "300434063498160_2019",
+                                              "300434063494100_2019",
+                                              "300434063392070_2019",
+                                              "300434063394110_2019",
+                                              "300434063495310_2019")))
 
 # Subset data according to desired criteria
 data_subset <- subset(data, (latitude >= 40 & latitude <= 90) & (longitude >= -90 & longitude <= -40))
@@ -81,14 +99,14 @@ extents_points <- st_bbox(points_sf)
 
 #----------------------------------------------------
 # Optional: Manual grid creation based on coordinates
-new_bb = c(-80, 45, -40, 90)
+new_bb = c(-105, 45, -50, 85)
 names(new_bb) = c("xmin", "ymin", "xmax", "ymax")
 attr(new_bb, "class") = "bbox"
 e <- st_as_sfc(new_bb)
 #----------------------------------------------------
 
 # Create extent object for points
-#e <- st_as_sfc(st_bbox(extents_points))
+e <- st_as_sfc(st_bbox(extents_points))
 
 # Create grid over the bounding box of points sf object
 grid <- st_make_grid(e, cellsize = c(1, 0.5)) %>%
@@ -125,9 +143,10 @@ plot(coast_clipped$geometry)
 #grid <- st_transform(grid, "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 # Transform features to LCC coordinate reference system
+grid_outline <- st_transform(grid_outline, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
 coast_sf <- st_transform(coast_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-points_sf <- st_transform(points_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-coast_clipped <- st_transform(coast_clipped, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-60, ellps=WGS84")
+points_sf <- st_transform(points_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
+coast_clipped <- st_transform(coast_clipped, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
 grid <- st_transform(grid, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
 
 # Plot shapefiles
@@ -181,6 +200,9 @@ ggplot(grid_agg, aes(x)) +
 
 # Create maps -----------------------------------------------------------------
 
+# ---------------------------------
+# Speed map with colour ramp legend 
+# ---------------------------------
 # Make colour pattern, add to plot where needed 
 pal <- colorRampPalette(c("dark blue", "blue", "cyan", "yellow", "red", "dark red"))
 
@@ -188,16 +210,16 @@ pal <- colorRampPalette(c("dark blue", "blue", "cyan", "yellow", "red", "dark re
 m <- ggplot() +
   geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
   geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
-  #geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
+  #geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = 0.75, stroke = 0.1) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
   theme(panel.border = element_rect(linetype = "solid", fill = NA),
         panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
-        panel.background = element_rect(fill = "aliceblue")) +
+        panel.background = element_rect(fill = "aliceblue"))
   coord_sf(expand = FALSE)
 
 # Plot map
-#m
+m
 
 # Plot map with colour gradient
 m + scale_fill_gradientn(colours = pal(16), name = "mean speed (m/s)", limits = c(0,1), oob = squish) + 
@@ -206,12 +228,31 @@ m + scale_fill_gradientn(colours = pal(16), name = "mean speed (m/s)", limits = 
         legend.key.size = unit(2.0, "cm"), 
         legend.key.width = unit(0.75,"cm"))
 
+# --------------------------------
+# Simple map of drift trajectories
+# --------------------------------
+m <- ggplot() +
+  geom_sf(data = grid_outline, fill = "aliceblue", colour = "black", size = 0.2) +
+  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
+  geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = 0.75, stroke = 0.1) +
+  annotation_scale(location = "bl", width_hint = 0.5) + 
+  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
+  theme(panel.border = element_rect(linetype = "solid", fill = NA),
+        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
+        panel.background = element_rect(fill = "aliceblue"),
+        legend.position = "none") + 
+  coord_sf(expand = TRUE)
 
+# Plot map
+m
+
+# ------------------------------------
 # Create map with limits (no clipping)
+# ------------------------------------
 n <- ggplot() +
-  geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
+  #geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
   geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
-  #geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
+  geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
   theme(panel.border = element_rect(linetype = "solid", fill = NA),
@@ -223,7 +264,9 @@ n <- ggplot() +
 # Plot map
 n
 
+# -----------------------------------------
 # Create mean speed map (old basic version)
+# -----------------------------------------
 o <- ggplot() +
   #geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
   #geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
@@ -239,6 +282,10 @@ o <- ggplot() +
 
 # Plot map
 o
+
+# ---------
+# Test maps
+# ---------
 
 # Create map with limits (no clipping)
 n <- ggplot() +
@@ -264,3 +311,14 @@ ylim = sf_project(from, to, y_pts)
 
 xlim
 ylim
+
+# Create map with limits (no clipping)
+n <- ggplot() +
+  geom_sf(data = grid_outline, fill = "aliceblue", colour = "black", size = 0.2) +
+  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
+  theme(panel.border = element_rect(linetype = "solid", fill = NA),
+        panel.grid.major = element_blank(), 
+        panel.background = element_rect(fill = NA)) 
+
+# Plot map
+n

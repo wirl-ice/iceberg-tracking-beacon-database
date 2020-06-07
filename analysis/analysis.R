@@ -1,38 +1,41 @@
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Title: Canadian Ice Service (CIS) Iceberg Tracking Beacon Database
 #
 # Created by: Adam Garbo
 #
-# Date: April 24, 2020
-#
-# Changelog:
-#
+# Date: June 6, 2020
 #
 # Description: 
 #   - Spatial analysis and graphical outputs.
-#
-# Necessary file(s): 
-#   - 
 #   
-# Notes: 
-#   -
+# Comments: 
+#   - Updated on June 6th to allow for limits to be applied without clipping
 #
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Install packages
-p <- c("anytime", "geosphere", "ggspatial", "lubridate", "RColorBrewer", "scales", "sf", "tidyverse")
+p <- c("anytime", "geosphere", "ggspatial",  "lubridate", "RColorBrewer", 
+       "rnaturalearth", "rnaturalearthdata", "rnaturalearthhires", "scales", 
+       "sf", "tidyverse")
 #install.packages(p) # Warning: Uncommenting this may take several minutes
+
+# Manually install rnaturalearth using devtools
+#devtools::install_github("ropensci/rnaturalearth")
+#devtools::install_github("ropensci/rnaturalearthdata")
+#devtools::install_github("ropensci/rnaturalearthhires")
 
 # Load the required packages
 lapply(p, library, character.only = TRUE)
 
-# Load data -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Load data
+# -----------------------------------------------------------------------------
 
 # Set working directory
 setwd("~/Desktop/cis_iceberg_tracking_beacon_database/analysis/Shapefiles")
 
 # Read data
-data <- read_csv("~/Desktop/cis_iceberg_tracking_beacon_database/output_data/database_csv/database_20200410.csv", 
+data <- read_csv("~/Desktop/cis_iceberg_tracking_beacon_database/output_data/database_csv/database_20200606.csv", 
                  col_types = cols(bp = col_double(), distance = col_double(), 
                                   gps_delay = col_double(), heading = col_double(), 
                                   latitude = col_double(), longitude = col_double(), 
@@ -42,7 +45,9 @@ data <- read_csv("~/Desktop/cis_iceberg_tracking_beacon_database/output_data/dat
                                   ti = col_double(), ts = col_double(), 
                                   ttff = col_double(), vbat = col_double()))
 
-# Subset data -----------------------------------------------------------------
+# -------------------------------------
+# Subset data 
+# -------------------------------------
 
 # Subset by beacon_id
 data_subset <- subset(data, beacon_id == ("300434063415110_2018"))
@@ -66,16 +71,18 @@ data_subset <- subset(data, (beacon_id %in% c("300434063418130_2018",
                                               "300434063495310_2019")))
 
 # Subset data according to desired criteria
-data_subset <- subset(data, (latitude >= 40 & latitude <= 90) & (longitude >= -90 & longitude <= -40))
+data_subset <- subset(data, (latitude >= 50 & latitude <= 85) & (longitude >= -90 & longitude <= -40))
 
-# Convert to spatial vector data ----------------------------------------------
+# -----------------------------------------------------------------------------
+# Convert to spatial vector data 
+# -----------------------------------------------------------------------------
 
-# Read coast shapefile from current working directory
-coast_sf <- st_read("coast_poly.shp")
+# Load rnaturalearth shapefile (Canada and Greenland only)
+coast_sf <- ne_countries(scale = 10, type = "countries", country = c('canada','greenland'), returnclass = "sf")
 
 # Convert data to simple feature (sf)
 points_sf <- st_as_sf(data, coords = c("longitude", "latitude"), crs = 4326) # Entire database
-points_sf <- st_as_sf(data_subset, coords = c("longitude", "latitude"), crs = 4326) # data subset
+points_sf <- st_as_sf(data_subset, coords = c("longitude", "latitude"), crs = 4326) # Data subset
 
 # Get geometry from sf objects
 st_geometry(coast_sf)
@@ -86,27 +93,29 @@ plot(coast_sf$geometry)
 plot(points_sf$geometry)
 
 # Transform features to WGS84 coordinate reference system
-coast_sf <- st_transform(coast_sf, "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-points_sf <- st_transform(points_sf, "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+coast_sf <- st_transform(coast_sf, 4326)
+points_sf <- st_transform(points_sf, 4326)
 
 # Plot transformed shapefiles
 plot(coast_sf$geometry)
 plot(points_sf$geometry)
 
-# Return bounding of simple features
+# ------------------------------------
+# Create bounding boxes and grids
+# ------------------------------------
+
+# -------------------------------------
+# Option 1: Get object extents
 extents_coast <- st_bbox(coast_sf)
 extents_points <- st_bbox(points_sf)
+e <- st_as_sfc(st_bbox(extents_points))
 
-#----------------------------------------------------
-# Optional: Manual grid creation based on coordinates
-new_bb = c(-105, 45, -50, 85)
+# Option 2: Manual grid creation 
+new_bb = c(-100, 40, -25, 90)
 names(new_bb) = c("xmin", "ymin", "xmax", "ymax")
 attr(new_bb, "class") = "bbox"
 e <- st_as_sfc(new_bb)
-#----------------------------------------------------
-
-# Create extent object for points
-e <- st_as_sfc(st_bbox(extents_points))
+# -------------------------------------
 
 # Create grid over the bounding box of points sf object
 grid <- st_make_grid(e, cellsize = c(1, 0.5)) %>%
@@ -125,37 +134,9 @@ plot(grid)
 grid_outline <- st_union(grid)
 plot(grid_outline)
 
-# Optional: Clip data ---------------------------------------------------------
-
-# Intersect polygons. Note that sf is intelligent with attribute data!
-coast_clipped <- st_intersection(coast_sf, grid_outline)
-
-# Get geometry from sf objects
-st_geometry(coast_clipped)
-
-# Plot clipped polygon
-plot(coast_clipped$geometry)
-
-# Transform data --------------------------------------------------------------
-
-# Transform features to WGS84 coordinate reference system
-#coast_clipped <- st_transform(coast_clipped, "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-#grid <- st_transform(grid, "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-
-# Transform features to LCC coordinate reference system
-grid_outline <- st_transform(grid_outline, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
-coast_sf <- st_transform(coast_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-points_sf <- st_transform(points_sf, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
-coast_clipped <- st_transform(coast_clipped, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-77.5, ellps=WGS84")
-grid <- st_transform(grid, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-
-# Plot shapefiles
-plot(grid)
-plot(points, add = TRUE, col = 'red')
-plot(coast_clipped, add = TRUE, col='white')
-
-# Spatial analysis ------------------------------------------------------------
-
+# -----------------------------------------------------------------------------
+# Spatial analysis 
+# -----------------------------------------------------------------------------
 # Create grid to sf (simple feature), which extends data.frame-like objects with a simple feature list column
 grid_sf <- st_sf(grid)
 
@@ -185,140 +166,118 @@ grid_sf <- left_join(grid_sf, aggdata2, by = c("id"="Group.1"))
 # Convert aggregated data to simple feature (sf) for plotting
 grid_agg <- st_sf(grid_sf)
 
-# Transform features to LCC coordinate reference system
-#grid_agg <- st_transform(grid_agg, "+proj=lcc +lat_1=77 +lat_2=49 +lat_0=40 +lon_0=-100, ellps=WGS84")
-
 # Remove all NA values
 grid_plot <- na.omit(grid_agg[1:3])
 
-# Inspect data ----------------------------------------------------------------
+# -------------------------------------
+# Inspect data 
+# -------------------------------------
 plot(grid_agg$x)
+plot(grid_agg$n)
 
-ggplot(grid_agg, aes(x)) + 
-  geom_histogram(binwidth = 0.1) +
-  xlab("mean speed (m/s)")
+ggplot(grid_agg, aes(n)) + 
+  geom_histogram(binwidth = 100) +
+  xlab("mean speed (m/s)") +
+  xlim(c(0,5000))
 
-# Create maps -----------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Establish limits for coord_sf() 
+# -----------------------------------------------------------------------------
 
-# ---------------------------------
-# Speed map with colour ramp legend 
-# ---------------------------------
+# Custom WGS84 extents
+xmin = -95
+ymin = 49
+xmax = -35
+ymax = 84
+
+# Calculate longitude centre for custom CRS
+(abs(xmin) + abs(xmax)) / 2
+
+# EPSG 3347
+crs_custom <- "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=63.390675 +lon_0=-65 +x_0=6200000 +y_0=3000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" 
+
+# Create domain bounding box
+domain_4326 <- st_bbox(c(xmin = xmin, xmax = xmax, ymax = ymax, ymin = ymin), crs = st_crs(4326))
+domain_4326 <- st_as_sfc(domain_4326)
+
+# Extract coordinates from bounding box
+disp_coord_4326 <- st_bbox(domain_4326)
+
+# Transform bounding box to custom CRS
+domain_custom <- st_transform(domain_4326, crs_custom)
+
+# Extract coordinates from bounding box
+disp_coord_custom <- st_bbox(domain_custom)
+
+
+# -----------------------------------------------------------------------------
+# Create maps 
+# -----------------------------------------------------------------------------
+
 # Make colour pattern, add to plot where needed 
 pal <- colorRampPalette(c("dark blue", "blue", "cyan", "yellow", "red", "dark red"))
 
-# Create map with limits
+# -------------------------------------
+# Count map with colour ramp CRS 4326 
+# -------------------------------------
+
+# Create map
 m <- ggplot() +
-  geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
-  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
+  geom_sf(data = grid_plot, aes(fill = n), colour = "black", size = 0.2) +
+  geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
   #geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = 0.75, stroke = 0.1) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
   theme(panel.border = element_rect(linetype = "solid", fill = NA),
         panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
-        panel.background = element_rect(fill = "aliceblue"))
-  coord_sf(expand = FALSE)
+        panel.background = element_rect(fill = "aliceblue")) +
+  coord_sf(xlim = c(disp_coord_4326["xmin"], disp_coord_4326["xmax"]), 
+           ylim = c(disp_coord_4326["ymin"], disp_coord_4326["ymax"]), expand = FALSE)
 
 # Plot map
 m
 
-# Plot map with colour gradient
-m + scale_fill_gradientn(colours = pal(16), name = "mean speed (m/s)", limits = c(0,1), oob = squish) + 
-  theme(legend.title = element_text(size = 12),
-        legend.text = element_text(size = 10),
-        legend.key.size = unit(2.0, "cm"), 
+# Plot count colour gradient 
+m + scale_fill_gradientn(colours = pal(16), name = "Count", limits = c(0,1000), oob = squish) + 
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(1.5, "cm"), 
         legend.key.width = unit(0.75,"cm"))
 
-# --------------------------------
-# Simple map of drift trajectories
-# --------------------------------
-m <- ggplot() +
-  geom_sf(data = grid_outline, fill = "aliceblue", colour = "black", size = 0.2) +
-  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
-  geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = 0.75, stroke = 0.1) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
-  theme(panel.border = element_rect(linetype = "solid", fill = NA),
-        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
-        panel.background = element_rect(fill = "aliceblue"),
-        legend.position = "none") + 
-  coord_sf(expand = TRUE)
+# -------------------------------------
+# Count map with colour ramp CRS 3347 
+# -------------------------------------
 
-# Plot map
-m
+# Transform features to LCC
+coast_sf_custom <- st_transform(coast_sf, crs_custom)
+points_sf_custom <- st_transform(points_sf, crs_custom)
+grid_plot_custom <- st_transform(grid_plot, crs_custom)
+grid_custom <- st_transform(grid, crs_custom)
+grid_outline_custom <- st_transform(grid_outline, crs_custom)
 
-# ------------------------------------
-# Create map with limits (no clipping)
-# ------------------------------------
+# Create map
 n <- ggplot() +
-  #geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
-  geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
-  geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
+  #geom_sf(data = grid_custom, fill = NA, colour = "black", size = 0.25) +
+  geom_sf(data = grid_plot_custom, aes(fill = n), colour = "black", size = 0.2) +
+  geom_sf(data = coast_sf_custom, fill = "antiquewhite", size = 0.3) +
+  #geom_sf(data = points_sf_3347, mapping = aes(colour = beacon_id), size = 0.75, stroke = 0.1) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
   theme(panel.border = element_rect(linetype = "solid", fill = NA),
         panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
         panel.background = element_rect(fill = "aliceblue")) +
-  coord_sf(crs = st_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"),
-           xlim = c(-85, -45), ylim = c(45, 80), expand = FALSE, clip = "on")
+  coord_sf(xlim = c(disp_coord_custom["xmin"], disp_coord_custom["xmax"]), 
+           ylim = c(disp_coord_custom["ymin"], disp_coord_custom["ymax"]), expand = FALSE)
 
 # Plot map
 n
 
-# -----------------------------------------
-# Create mean speed map (old basic version)
-# -----------------------------------------
-o <- ggplot() +
-  #geom_sf(data = grid_plot, aes(fill = x), colour = "black", size = 0.2) +
-  #geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
-  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
-  #geom_sf(data = points_sf, mapping = aes(colour = beacon_id), size = .5, stroke = 0) +
-  theme(panel.border = element_rect(linetype = "solid", fill = NA),
-        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
-        panel.background = element_rect(fill = "aliceblue"),
-        legend.position = "none") +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering)
-  #coord_sf(expand = FALSE)
+# Plot count colour gradient 
+n + scale_fill_gradientn(colours = pal(16), name = "Count", limits = c(0,1000), oob = squish) + 
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(1.5, "cm"), 
+        legend.key.width = unit(0.75,"cm"))
 
-# Plot map
-o
 
-# ---------
-# Test maps
-# ---------
 
-# Create map with limits (no clipping)
-n <- ggplot() +
-  geom_sf(data = coast_sf, fill = "antiquewhite", size = 0.3) +
-  #geom_sf(data = points_sf, mapping = aes(colour = speed), size = 1, stroke = 0) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(1, "cm"), pad_y = unit(1, "cm"), style = north_arrow_fancy_orienteering) +
-  theme(panel.border = element_rect(linetype = "solid", fill = NA),
-        panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.1), 
-        panel.background = element_rect(fill = "aliceblue")) +
-  coord_sf(crs = st_crs("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-75 +x_0=0 +y_0=-8000000 +ellps=WGS84 +datum=WGS84 +units=m +no_defs no_defs"),
-           xlim = c(xlim[1], ylim[2]), ylim = c(xlim[2], ylim[1]), expand = FALSE, clip = "on")
-
-# Plot map
-n
-
-from ="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
-to = "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-75 +x_0=0 +y_0=-8000000 +ellps=WGS84 +datum=WGS84 +units=m +no_defs no_defs"
-x_pts = cbind(45, -85)
-y_pts = cbind(80, -45)
-xlim = sf_project(from, to, x_pts)
-ylim = sf_project(from, to, y_pts)
-
-xlim
-ylim
-
-# Create map with limits (no clipping)
-n <- ggplot() +
-  geom_sf(data = grid_outline, fill = "aliceblue", colour = "black", size = 0.2) +
-  geom_sf(data = coast_clipped, fill = "antiquewhite", size = 0.3) +
-  theme(panel.border = element_rect(linetype = "solid", fill = NA),
-        panel.grid.major = element_blank(), 
-        panel.background = element_rect(fill = NA)) 
-
-# Plot map
-n

@@ -1,4 +1,4 @@
-# Canadian Ice Service (CIS) Iceberg Tracking Beacon Database
+# Canadian Ice Service (CIS) Iceberg Beacon Database
 ![Image](https://github.com/adamgarbo/Cryologger_Iceberg_Tracking_Beacon/blob/master/Archive/V2/Images/DSC_2436.JPG)
 Date: 2020-04-10
 

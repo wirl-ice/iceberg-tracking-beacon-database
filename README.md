@@ -1,6 +1,6 @@
 # Canadian Ice Service (CIS) Iceberg Beacon Database
 ![Image](https://github.com/adamgarbo/Cryologger_Iceberg_Tracking_Beacon/blob/master/Archive/V2/Images/DSC_2436.JPG)
-Date: 2020-04-10
+Date: 2020-06-25
 
 ## Introduction
 The Canadian Ice Service has recently compiled one of the most comprehensive databases of in-situ iceberg tracking beacon drift trajectories in the Northern Hemisphere, with over 800,00 observations collected between 1997 and 2019. 

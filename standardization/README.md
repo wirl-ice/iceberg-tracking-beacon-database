@@ -1,4 +1,4 @@
-# Iceberg Tracking Beacon Data Standardization
+# Standardization of Iceberg Tracking Beacon Data 
 
 Author: Adam Garbo
 
@@ -37,7 +37,7 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
 │   └── manuals				# Available tracking beacon instrumentation manuals
 ├── output_data
 │   ├── shapefiles			# Shapefiles (line and points) of tracking beacon trajectories
-│   └── database			# Database snapshots in CSV format 
+│   └── csv				# Database files in CSV format 
 └── scripts
     ├── download_decode			# Python code to download and process SBD data
     ├── python				# Python scripts to merge standardized CSV files

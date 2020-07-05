@@ -64,16 +64,20 @@ Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> 
 ```
 
 #### Arguments:
-* input_path: 
-  * Full path to input data folder (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
-* output_path      
-  * Output data folder for processed data (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data )
-* script_path          
-  * Folder containing standardization scripts (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
-* filename        
-  * Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
-* beacon_type 
-  *  Currently supported beacon types include: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
+`input_path:`
+* Full path to input data folder (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file)
+
+`output_path`      
+* Output data folder for processed data (e.g. /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data )
+
+`script_path`          
+* Folder containing standardization scripts (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
+`filename`        
+
+* Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
+`beacon_type`
+
+* Currently supported beacon types include: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
 	  
 #### Syntax example:
 

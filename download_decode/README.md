@@ -5,11 +5,11 @@ This collection of code is used to query an email account and download and decod
 
 ## Description
 Contains: 
-download_and_decode.py
-sbd_decoder.py
-metocean_decoder.py
-oceanetic_decoder.py
-paths.py
+* download_and_decode.py
+* sbd_decoder.py
+* metocean_decoder.py
+* oceanetic_decoder.py
+* paths.py
 
 download_and_decode.py is the parent script, and calls on paths.py, sbd_decoder.py,metocean_decoder.py, and oceanetic_decoder.py as required. 
 

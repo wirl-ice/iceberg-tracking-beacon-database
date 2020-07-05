@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Title: Canadian Ice Service (CIS) Iceberg Tracking Beacon Database
 #
 # Created by: Adam Garbo
@@ -11,7 +11,7 @@
 # Comments: 
 #   - Updated on June 6th to allow for limits to be applied without clipping
 #
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Install packages
 p <- c("anytime", "geosphere", "ggspatial",  "lubridate", "RColorBrewer", 
@@ -28,9 +28,16 @@ p <- c("anytime", "geosphere", "ggspatial",  "lubridate", "RColorBrewer",
 # Load the required packages
 lapply(p, library, character.only = TRUE)
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Library configuration
+# ------------------------------------------------------------------------------
+
+# Make colour pattern, add to plot where needed 
+pal <- colorRampPalette(c("dark blue", "blue", "cyan", "yellow", "red", "dark red"))
+
+# ------------------------------------------------------------------------------
 # Load data
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Set working directory
 #setwd("~/Desktop/cis_iceberg_beacon_database/analysis/Shapefiles")
@@ -76,9 +83,9 @@ data_subset <- subset(data, (beacon_id %in% c("300434063418130_2018",
 # Subset data according to desired criteria
 data_subset <- subset(data, (latitude >= 50 & latitude <= 85) & (longitude >= -90 & longitude <= -40))
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Convert to spatial vector data 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Load rnaturalearth shapefile (Canada and Greenland only)
 coast_sf <- ne_countries(scale = 10, type = "countries", country = c('canada','greenland'), returnclass = "sf")
@@ -140,9 +147,9 @@ extents_grid <- st_bbox(grid)
 grid_outline <- st_union(grid)
 #plot(grid_outline)
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Spatial analysis 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Create grid to sf (simple feature), which extends data.frame-like objects with a simple feature list column
 grid_sf <- st_sf(grid)
 
@@ -186,9 +193,9 @@ ggplot(grid_agg, aes(n)) +
   xlab("mean speed (m/s)") +
   xlim(c(0,5000))
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Establish limits for coord_sf() 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Custom WGS84 extents
 xmin = -95
@@ -223,9 +230,9 @@ domain_custom <- st_transform(domain_4326, crs_custom)
 disp_coord_custom <- st_bbox(domain_custom)
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Study Area Box 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Custom WGS84 extents
 xmin = -80
@@ -237,12 +244,9 @@ study_area <- st_bbox(c(xmin = xmin, xmax = xmax, ymax = ymax, ymin = ymin), crs
 study_area <- st_as_sfc(study_area)
 study_area_custom <- st_transform(study_area, crs_custom)
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Create maps 
-# -----------------------------------------------------------------------------
-
-# Make colour pattern, add to plot where needed 
-pal <- colorRampPalette(c("dark blue", "blue", "cyan", "yellow", "red", "dark red"))
+# ------------------------------------------------------------------------------
 
 # -------------------------------------
 # Count map with colour ramp CRS 4326 
@@ -279,8 +283,6 @@ m + scale_fill_gradientn(colours = pal(16), name = "Count", limits = c(0,1000), 
 # Transform features to LCC
 coast_sf_custom <- st_transform(coast_sf, crs_custom)
 
-
-
 # Create map (750 x 650)
 n <- ggplot() +
   #geom_sf(data = grid_plot_custom, aes(fill = n), colour = "black", size = 0.2) +
@@ -306,5 +308,8 @@ n + scale_fill_gradientn(colours = pal(16), name = "Count", limits = c(0,1000), 
         legend.key.size = unit(1.5, "cm"), 
         legend.key.width = unit(0.75,"cm"))
 
+# ------------------------------------------------------------------------------
+# Extra Code
+# ------------------------------------------------------------------------------
 
 

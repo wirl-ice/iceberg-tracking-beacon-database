@@ -201,6 +201,9 @@ June 15, 2019
 April 11, 2020
 * Documentation re-written to reflect significant changes to the overall project
 
+July 4, 2020
+* Trimming of beacon trajectories based on detailed analysis of when icebergs likely deterioriated/capsized and beacons transitioned to drifter buoys.
+
 ## Publications
 * To follow.
 

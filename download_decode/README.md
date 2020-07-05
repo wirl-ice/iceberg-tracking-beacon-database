@@ -1,4 +1,4 @@
-# Download and decode
+# Download & Decode
 
 ## Introduction
 This collection of code is used to query an email account and download and decode SBD messages from MetOcean and Oceanetics SBD beacons. 

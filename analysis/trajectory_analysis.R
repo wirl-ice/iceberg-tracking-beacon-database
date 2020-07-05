@@ -39,7 +39,7 @@ coast_sf <- ne_countries(scale = 10, type = "countries",
                          country = c('canada','greenland'), returnclass = "sf")
 
 # Read database
-data <- read_csv("~/Desktop/cis_iceberg_beacon_database/output_data/database_csv/database_20200625.csv", 
+data <- read_csv("~/Desktop/cis_iceberg_beacon_database/csv/database_20200704.csv", 
                  col_types = cols(bp = col_double(), distance = col_double(), 
                                   gps_delay = col_double(), heading = col_double(), 
                                   latitude = col_double(), longitude = col_double(), 

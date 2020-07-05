@@ -86,28 +86,30 @@ Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/30043406
 **1. Standardized CSV file**
 
 A CSV will be produced with the following column headings:
-```
-beacon_id
-beacon_type
-datetime_data
-datetime_transmit
-latitude
-longitude
-vbat
-ta
-ti
-ts
-bp
-pitch
-roll
-heading
-satellites
-loc_accuarcy
-message_index
-gps_delay
-snr
-ttff
-```
+
+| Variable | Unit |
+| --- | ---  |
+|beacon_id|   |
+|beacon_type|   |
+|datetime_data| YYYY-MM-DD hh:mm:ss |
+|datetime_transmit| YYYY-MM-DD hh:mm:ss  |
+|latitude| DD  |
+|longitude| DD |
+|vbat| V  |
+|ta| °C  |
+|ti| °C  |
+|ts| °C |
+|bp| hPa |
+|pitch| ° |
+|roll| ° |
+|heading| ° |
+|satellites| # |
+|loc_accuarcy|   |
+|message_index|   |
+|gps_delay|   |
+|snr|   |
+|ttff|   |
+
 **2. Geospatial outputs:**
 * .shp/.shx/.prj/.dbf files (line and point)
 * .gpx files (line and point)

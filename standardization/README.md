@@ -89,27 +89,28 @@ A CSV will be produced with the following column headings:
 
 | Variable | Unit |
 | --- | ---  |
-|beacon_id|   |
-|beacon_type|   |
-|datetime_data| YYYY-MM-DD hh:mm:ss |
-|datetime_transmit| YYYY-MM-DD hh:mm:ss  |
-|latitude| DD  |
-|longitude| DD |
-|vbat| V  |
-|ta| °C  |
-|ti| °C  |
-|ts| °C |
-|bp| hPa |
-|pitch| ° |
-|roll| ° |
-|heading| ° |
-|satellites| # |
-|loc_accuarcy|   |
-|message_index|   |
-|gps_delay|   |
-|snr|   |
-|ttff|   |
-
+| beacon_id |   |
+| beacon_type |   |
+| datetime_data | YYYY-MM-DD hh:mm:ss |
+| datetime_transmit | YYYY-MM-DD hh:mm:ss  |
+| latitude | DD  |
+| longitude | DD |
+| vbat | V  |
+| ta | °C  |
+| ti | °C  |
+| ts | °C |
+| bp | hPa |
+| pitch | ° |
+| roll | ° |
+| heading | ° |
+| satellites | # |
+| loc_accuarcy |   |
+| message_index |   |
+| gps_delay |   |
+| snr |   |
+| ttff |   |
+| distance | m |
+| speed | m/s |
 **2. Geospatial outputs:**
 * .shp/.shx/.prj/.dbf files (line and point)
 * .gpx files (line and point)

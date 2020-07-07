@@ -36,8 +36,8 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
 ├── documentation			
 │   └── manuals				# Available tracking beacon instrumentation manuals
 ├── output_data
-│   ├── shapefiles			# Shapefiles (line and points) of tracking beacon trajectories
-│   └── csv				# Database files in CSV format 
+│   ├── csv				# Shapefiles (line and points) of tracking beacon trajectories
+│   └── shapefiles			# Database files in CSV format 
 └── scripts
     ├── download_decode			# Python code to download and process SBD data
     ├── python				# Python scripts to merge standardized CSV files

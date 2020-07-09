@@ -4,7 +4,7 @@ Author: Adam Garbo
 
 Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
 
-Date: 2020-07-05
+Date: 2020-07-09
 
 ## Introduction
 
@@ -74,7 +74,7 @@ Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> 
 * Folder containing standardization scripts (e.g., /iceberg_tracking_beacon_database/scripts/standardization)
 
 `filename`        
-* Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '12995_1997', *NOT* '12995_1997.csv')
+* Name of raw beacon data CSV file followed by the start year of the deployment, separated by an underscore, without extension (i.e. '1997_12995', *NOT* '1997_12995.csv')
 
 `beacon_type`
 * Currently supported beacon types include: BIO, CALIB_ARGOS,CALIB_IRIDIUM, CANATEC, CCGS, CRYOLOGGER, GNSS, IABP, NAVIDATUM, OCEANETIC, PPP, ROCKSTAR, SOLARA, SVP-I-BXGSA-L-AD, SVP-I-BXGS-LP, SVP-I-XXGS-LP
@@ -82,7 +82,7 @@ Rscript beacon_processing.R <input_path> <output_path> <script_path> <filename> 
 #### Syntax example:
 
 ```R
-Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 300434063415160_2018 CRYOLOGGER
+Rscript beacon_processing.R /iceberg_tracking_beacon_database/data/2018/300434063415160/raw_data/deployment_file /iceberg_tracking_beacon_database/data/2018/300434063415160/standardized_data /iceberg_tracking_beacon_database/scripts/standardization 2018_300434063415160 CRYOLOGGER
 ```
 
 ## Outputs:
@@ -115,6 +115,7 @@ A CSV will be produced with the following column headings:
 | ttff |   |
 | distance | m |
 | speed | m/s |
+
 **2. Geospatial outputs:**
 * .shp/.shx/.prj/.dbf files (line and point)
 * .gpx files (line and point)
@@ -206,7 +207,6 @@ July 4, 2020
 
 ## Publications
 * To follow.
-
 
 ## License
 * To follow.

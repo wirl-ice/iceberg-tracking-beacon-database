@@ -2,14 +2,14 @@
 ![Image](https://github.com/adamgarbo/Cryologger_Iceberg_Tracking_Beacon/blob/master/Archive/V2/Images/DSC_2436.JPG)
 
 ## Introduction
-The Canadian Ice Service has recently compiled one of the most comprehensive databases of in-situ iceberg tracking beacon drift trajectories in the Northern Hemisphere, with over 800,00 observations collected between 1997 and 2019. 
+The Canadian Ice Service has recently compiled one of the most comprehensive databases of in-situ iceberg tracking beacon drift trajectories in the Northern Hemisphere, with over 800,00 observations collected between 1997 and 2020. 
 
 The database contains iceberg and ice island position and meteorological data as measured by tracking beacons as well as information about the target at the time of deployment (e.g. shape, dimensions, source, thickness) where possible. Data have been contributed by government, academic, and industry sources from tracking beacons deployed on targets in the western and eastern Canadian Arctic, and off the east coast of Canada. 
 
 Drift direction, speed, and pattern data from satellite tracking beacons deployed on icebergs and ice islands will be used to understand how icebergs drift, and to develop and validate models of iceberg drift, in order to improve predictions of ice hazard occurrence and behaviour. 
 
 
-## Directory structure:
+## Repository Contents
 
 ```
 .
@@ -28,8 +28,8 @@ Drift direction, speed, and pattern data from satellite tracking beacons deploye
 ├── documentation			
 │   └── manuals				# Available tracking beacon instrumentation manuals
 ├── output_data
-│   ├── csv				# Shapefiles (line and points) of tracking beacon trajectories
-│   └── shapefiles			# Database files in CSV format 
+│   ├── csv				# Database files in CSV format
+│   └── shapefiles			# Shapefiles (line and points) of tracking beacon trajectories 
 └── scripts
     ├── download_decode			# Python code to download and process SBD data
     ├── python				# Python scripts to merge standardized CSV files

@@ -25,9 +25,9 @@ The R programming language was used to write a number of scripts to perform vari
 | ccgs_to_csv.R |   |
 | clean_data.R |   |
 | cryologger_to_csv.R |   |
-| csv_to_gpx.R |   |
-| csv_to_kml.R |   |
-| csv_to_shp.R |   |
+| csv_to_gpx.R | Write data to a point and line GPX file |
+| csv_to_kml.R | Write data to a point and line KML file  |
+| csv_to_shp.R | Write data to a point and line shapefile  |
 | cumulative_speed.R |   |
 | delete_file.r |   |
 | distaz.R |   |

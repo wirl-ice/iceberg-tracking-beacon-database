@@ -1,10 +1,10 @@
-# Standardization of Iceberg Tracking Beacon Data 
+# CIS Iceberg Beacon Database: Standardization
 
 Author: Adam Garbo
 
 Contributors: Anna Crawford, Jill Rajewicz and Derek Mueller, Carleton University
 
-Date: 2020-07-09
+Date: 2020-07-11
 
 ## Introduction
 
@@ -14,11 +14,29 @@ This collection of code ingests raw tracking beacon data in comma-separated valu
 
 The R programming language was used to write a number of scripts to perform various data ingestion and cleaning tasks. 
 
+| Script | Description |
+| --- | ---  |
+| beacon_processing.R  | Main script to process beacon data |
+| bio_to_csv.R |   |
+| calculate_speed.R |   |
+| calib_argos_to_csv.R |   |
+| calib_iridium_to_csv.R |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+|   |   |
+| svp_to_csv.R |   |
+| validate.R |   |
 
-The directory structure of the Iceberg Tracking Beacon Database is as follows:
 
 ### Directory structure:
-
+The directory structure of the Iceberg Tracking Beacon Database is as follows:
 ```
 .
 ├── analysis

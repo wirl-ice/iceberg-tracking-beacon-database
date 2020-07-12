@@ -21,16 +21,33 @@ The R programming language was used to write a number of scripts to perform vari
 | calculate_speed.R |   |
 | calib_argos_to_csv.R |   |
 | calib_iridium_to_csv.R |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
-|   |   |
+| canatec_to_csv.R |   |
+| ccgs_to_csv.R |   |
+| clean_data.R |   |
+| cryologger_to_csv.R |   |
+| csv_to_gpx.R |   |
+| csv_to_kml.R |   |
+| csv_to_shp.R |   |
+| cumulative_speed.R |   |
+| delete_file.r |   |
+| distaz.R |   |
+| gnss_to_csv.R |   |
+| iabp_to_csv.R |   |
+| summary_stats.R |   |
+| metadata.R |   |
+| navidatum_to_csv.R |   |
+| oceanetic_to_csv.R |   |
+| polar_plot_type.R |   |
+| polar_plot.R |   |
+| pre_polar_plot_ppp.R |   |
+| pre_polar_plot.R |   |
+| standardize_data.R |   |
+| rockstar_to_csv.R |   |
+| sbd_to_csv.R |   |
+| sensor_range.R |   |
+| solara_to_csv.R |   |
+| speed_plot.R |   |
+| standardize_columns.R |   |
 | svp_to_csv.R |   |
 | validate.R |   |
 

@@ -12,48 +12,8 @@ This collection of code ingests raw tracking beacon data in comma-separated valu
 
 ## Description:
 
-The R programming language was used to write a number of scripts to perform various data ingestion and cleaning tasks. 
-
-| Script | Description |
-| --- | ---  |
-| beacon_processing.R  | Main script to process beacon data |
-| bio_to_csv.R |   |
-| calculate_speed.R |   |
-| calib_argos_to_csv.R |   |
-| calib_iridium_to_csv.R |   |
-| canatec_to_csv.R |   |
-| ccgs_to_csv.R |   |
-| clean_data.R |   |
-| cryologger_to_csv.R |   |
-| csv_to_gpx.R | Write data to a point and line GPX file |
-| csv_to_kml.R | Write data to a point and line KML file  |
-| csv_to_shp.R | Write data to a point and line shapefile  |
-| cumulative_speed.R |   |
-| delete_file.r |   |
-| distaz.R |   |
-| gnss_to_csv.R |   |
-| iabp_to_csv.R |   |
-| summary_stats.R |   |
-| metadata.R |   |
-| navidatum_to_csv.R |   |
-| oceanetic_to_csv.R |   |
-| polar_plot_type.R |   |
-| polar_plot.R |   |
-| pre_polar_plot_ppp.R |   |
-| pre_polar_plot.R |   |
-| standardize_data.R |   |
-| rockstar_to_csv.R |   |
-| sbd_to_csv.R |   |
-| sensor_range.R |   |
-| solara_to_csv.R |   |
-| speed_plot.R |   |
-| standardize_columns.R |   |
-| svp_to_csv.R |   |
-| validate.R |   |
-
-
 ### Directory structure:
-The directory structure of the Iceberg Tracking Beacon Database is as follows:
+The directory structure of the CIS Iceberg Beacon Database is as follows:
 ```
 .
 ├── analysis
@@ -79,8 +39,46 @@ The directory structure of the Iceberg Tracking Beacon Database is as follows:
     └── standardization			# R scripts to process raw tracking beacon data
     
 ```
+### Scripts
 
+The R programming language was used to write a number of scripts to perform various data ingestion and cleaning tasks. 
 
+| Script | Description |
+| --- | ---  |
+| beacon_processing.R  | Main script to process beacon data |
+| bio_to_csv.R | Converts raw data from a Bedford Institude of Oceanography beacon to a standardized CSV  |
+| calculate_speed.R |   |
+| calib_argos_to_csv.R | Standardizes raw data from MetOcean CALIB (Argos) beacons |
+| calib_iridium_to_csv.R | Standardizes raw data from MetOcean iCALIB (Iridium) beacons |
+| canatec_to_csv.R | Standardizes raw data from Canatec beacons |
+| ccgs_to_csv.R | Standardizes raw data from Canadian Coast Guard SLDMBs |
+| clean_data.R |   |
+| cryologger_to_csv.R | Standardizes raw data from Cryologger beacons |
+| csv_to_gpx.R | Outputs data as a point and line GPX file |
+| csv_to_kml.R | Outputs data as a point and line KML file |
+| csv_to_shp.R | Outputs data as a point and line shapefile |
+| cumulative_speed.R |   |
+| delete_file.r |   |
+| distaz.R |   |
+| gnss_to_csv.R |   |
+| iabp_to_csv.R |   |
+| summary_stats.R |   |
+| metadata.R |   |
+| navidatum_to_csv.R |   |
+| oceanetic_to_csv.R |   |
+| polar_plot_type.R |   |
+| polar_plot.R |   |
+| pre_polar_plot_ppp.R |   |
+| pre_polar_plot.R |   |
+| standardize_data.R | Determines appropriate script to execute to convert raw data to a standardized CSV |
+| rockstar_to_csv.R | Standardizes raw data from Rock Seven RockSTAR beacons |
+| sbd_to_csv.R |   |
+| sensor_range.R |   |
+| solara_to_csv.R | Standardizes raw data from Solara beacons |
+| speed_plot.R |   |
+| standardize_columns.R |   |
+| svp_to_csv.R |   |
+| validate.R |   |
 
 ## Usage:
 

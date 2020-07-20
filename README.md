@@ -14,7 +14,9 @@ Drift direction, speed, and pattern data from satellite tracking beacons deploye
 ```
 .
 ├── analysis
-│   ├── R				# R code for performing spatial analyses
+│   ├── figures                         # Spatial analysis produced figures
+│   ├── Python				# Python code for plotting spatial data
+│   ├── R		                # R code for performing spatial analyses
 │   └── Shapefiles			# Shapefiles used in spatial analyses
 ├── data				
 │   └── <year>				# Year of collected tracking beacon data

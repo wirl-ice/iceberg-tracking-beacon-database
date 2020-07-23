@@ -14,16 +14,13 @@
 # ------------------------------------------------------------------------------
 
 # Install packages
-p <- c("anytime", "cowplot", "geosphere", "ggspatial",  "lubridate", "RColorBrewer", 
-       "rgeos", "rnaturalearth","rnaturalearthdata", "rnaturalearthhires", 
-       "scales", "sf", "tidyverse", "zoo")
+p <- c("anytime", "cowplot", "geosphere", "ggspatial",  "lubridate", "RcppRoll",
+       "RColorBrewer", "rgeos", "rnaturalearth","rnaturalearthdata", "rnaturalearthhires", 
+       "scales", "sf", "tidyverse")
 #install.packages(p) # Warning: Un-commenting this may take several minutes
 
 # Load the required packages
 lapply(p, library, character.only = TRUE)
-
-install.packages("RcppRoll")
-library(RcppRoll)
 
 # ------------------------------------------------------------------------------
 # Configure libraries
@@ -42,7 +39,7 @@ coast_sf <- ne_countries(scale = 10, type = "countries",
                          country = c('canada','greenland'), returnclass = "sf")
 
 # Read database
-data <- read_csv("~/Desktop/cis_iceberg_beacon_database/csv/database_20200704.csv", 
+data <- read_csv("~/Desktop/cis_iceberg_beacon_database/output_data/csv/database_20200708.csv", 
                  col_types = cols(bp = col_double(), distance = col_double(), 
                                   gps_delay = col_double(), heading = col_double(), 
                                   latitude = col_double(), longitude = col_double(), 
@@ -52,23 +49,33 @@ data <- read_csv("~/Desktop/cis_iceberg_beacon_database/csv/database_20200704.cs
                                   ti = col_double(), ts = col_double(), 
                                   ttff = col_double(), vbat = col_double()))
 
-# Subset data according to desired criteria
-data <- subset(data, (speed <= 5) & (distance <= 100000))
-
 # Subset a specific beacon
 
-# ArcticNet 2011
-subset <- subset(data, beacon_id == "300234010031950_2011")
-subset <- subset(data, beacon_id == "300234010955690_2011")
-subset <- subset(data, beacon_id == "300234010959690_2011")
+# 2011
+subset <- subset(data, beacon_id == "2011_300234010031950")
+subset <- subset(data, beacon_id == "2011_300234010955690")
+subset <- subset(data, beacon_id == "2011_300234010959690")
+subset <- subset(data, beacon_id == "2011_300234010958690_PII-A")
 
-subset <- subset(data, beacon_id == "300234011240410_2013")
-subset <- subset(data, beacon_id == "300234011241410_2013")
-subset <- subset(data, beacon_id == "300234011242410_2013")
 
-subset <- subset(data, beacon_id == "300234060435010_2015")
+# 2012
+subset <- subset(data, beacon_id == "2012_300234010132070")
+
+#2013
+subset <- subset(data, beacon_id == "2013_300234011240410")
+subset <- subset(data, beacon_id == "2013_300234011241410")
+subset <- subset(data, beacon_id == "2013_300234011242410")
+
+#2015
+subset <- subset(data, beacon_id == "2015_300234060435010")
+
+# 2017
+subset <- subset(data, beacon_id == "2017_300234060169280")
+
 
 # Subset date range
+subset <- subset(subset, (datetime_data > as.POSIXct("2011-08-29 00:00:00")))
+                 
 subset <- subset(subset, (datetime_data > as.POSIXct("2015-10-01 00:00:00")) & 
                    (datetime_data < as.POSIXct("2016-11-01 00:00:00")))
 
@@ -83,14 +90,23 @@ subset$datetime <- as.POSIXct(subset$datetime_data)
 points_sf <- st_as_sf(subset, coords = c("longitude", "latitude"), crs = 4326) # Entire database
 
 # Window
-window = 30
+window = 3
 
-# Rolling mean
-points_sf$t_x = roll_mean(points_sf$ts, n = window, fill = NA)
+# Temperature rolling mean & standard deviation
+# Priority: 1) surface, 2) atmosphere, 3) internal
+if (all(!is.na(points_sf$ts))) { 
+  points_sf$t_x = roll_mean(points_sf$ts, n = window, fill = NA)
+  points_sf$t_sd = roll_sd(points_sf$ts, n = window, fill = NA)
+} else if (all(!is.na(points_sf$ta))) {
+  points_sf$t_x = roll_mean(points_sf$ta, n = window, fill = NA)
+  points_sf$t_sd = roll_sd(points_sf$ta, n = window, fill = NA)
+} else {
+  points_sf$t_x = roll_mean(points_sf$ti, n = window, fill = NA)
+  points_sf$t_sd = roll_sd(points_sf$ti, n = window, fill = NA)
+}
+
+# Speed rolling mean & standard deviation
 points_sf$speed_x = roll_mean(points_sf$speed, n = window, fill = NA)
-
-# Rolling standard deviation
-points_sf$t_sd = roll_sd(points_sf$ts, n = window, fill = NA)
 points_sf$speed_sd = roll_sd(points_sf$speed, n = window, fill = NA)
 
 # ------------------------------------------------------------------------------
@@ -108,21 +124,24 @@ map <- ggplot() +
 # ------------------------------------------------------------------------------
 
 beacon = paste("Beacon:", points_sf$beacon_id[1])
-interval = "1 week"
+interval = "1 day"
 
 # Plot temperature
 p0 <- ggplot(data = points_sf) +
   geom_line(aes(datetime, ts), colour = palette[1]) +
   xlab(NULL) +
   ylab("Temperature (°C)") +
-  theme_classic()
+  scale_x_datetime(date_breaks = interval) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(face="bold")) 
 
 # Plot temperature rolling mean
 p1 <- ggplot(data = points_sf) +
   geom_line(aes(datetime, t_x), colour = palette[1]) +
   xlab(NULL) +
   ylab("Mean (°C)") +
-  ggtitle(paste("Temperature: 30-day rolling mean & standard deviation", beacon, sep="\n")) +
+  ggtitle(paste("Temperature: 7-day rolling mean & standard deviation", beacon, sep="\n")) +
   scale_x_datetime(date_breaks = interval) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -149,7 +168,7 @@ p3 <- ggplot(data = points_sf) +
   geom_line(aes(datetime, speed_x), colour = palette[1]) +
   xlab(NULL) +
   ylab("Mean (m/s)") +
-  ggtitle(paste("Speed: 30-day rolling mean & standard deviation", beacon, sep="\n")) +  scale_x_datetime(date_breaks = "1 days") +
+  ggtitle(paste("Speed: 7-day rolling mean & standard deviation", beacon, sep="\n")) +  scale_x_datetime(date_breaks = "1 days") +
   scale_x_datetime(date_breaks = interval) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),

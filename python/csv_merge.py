@@ -9,8 +9,8 @@ filename = 'database_' + datetime + '.csv'
 
 # Import CSV files from folder
 #my_path = os.getcwd()
-input_path = '/Users/adam/Desktop/cis_iceberg_tracking_beacon_database/data' # Change accordingly
-output_path = '/Users/adam/Desktop/cis_iceberg_tracking_beacon_database/output_data/' + filename # Change accordingly
+input_path = '/Users/adam/Desktop/cis_iceberg_beacon_database/data' # Change accordingly
+output_path = '/Users/adam/Desktop/cis_iceberg_beacon_database/output_data/csv/' + filename # Change accordingly
 files = sorted(glob.glob(input_path + '/**/standardized_data/*.csv', recursive=True)) # Requires Python 3
 
 

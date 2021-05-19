@@ -37,12 +37,15 @@
 #------------------------------------------------------------------------------------------------
 
 # Install packages
-p <- c("anytime", "assertthat", "chron", "date", "dplyr", "geosphere", "grDevices", 
-       "here", "lubridate", "sp", "rgdal", "RPMG", "RSEIS", "shapefiles", "stringr")
-#install.packages(p) # Warning: Uncommenting this may take several minutes
+p <- c("anytime", "assertthat", "chron", "date", "dplyr", "geosphere", "here", 
+       "lubridate", "sp", "rgdal", "RPMG", "RSEIS", "shapefiles", "stringr")
+#install.packages(p) # Warning: Un-commenting this may take several minutes
 
 # Load the required packages
 lapply(p, library, character.only = TRUE)
+
+# Disable scientific notation
+options(scipen = 999)
 
 # Define system arguments
 #-------------------------
@@ -118,6 +121,7 @@ source("cryologger_to_csv.R")
 source("distaz.R")
 source("gnss_to_csv.R")
 source("iabp_to_csv.R")
+source("iip_to_csv.R")
 source("navidatum_to_csv.R")
 source("oceanetic_to_csv.R")
 source("rockstar_to_csv.R")
@@ -151,14 +155,17 @@ source("pre_polar_plot_ppp.R")
 source("speed_plot.R")
 
 # Function to output a summary stats file
-source("ice_island_stats.R")
+source("summary_stats.R")
 
 # Function to overwrite all files (Backup first if you want to save the files!)
 source("delete_file.r")
 
-# Capture messages and errors to logfile in output directory
+# Capture messages and errors to log file in output directory
 #-----------------------------------------------------------
 setwd(output)
+
+# Delete all pre-existing files within output folder
+unlink("*")
 
 # Create logfile 
 logfile <- file("debug.txt", open="wt")
@@ -196,6 +203,7 @@ valid = c("BIO",
           "CRYOLOGGER",
           "GNSS",
           "IABP",
+          "IIP",
           "NAVIDATUM",
           "OCEANETIC",
           "PPP",
@@ -289,20 +297,20 @@ csv_to_gpx(standard_data, filename)
 # Convert CSV to polar plot (polarplot called within prepolarplot function)
 #-----------------------------------------------------------------------------
 #polar_plot_type(standard_data)
-pre_polar_plot(standard_data) 
+#pre_polar_plot(standard_data) 
 
 # Convert CSV to speed plot
 #-------------------------
-speed_plot(standard_data)
+#speed_plot(standard_data)
 
 # Convert CSV to cumulative speed plot
 #-------------------------------------
-cumulative_speed(standard_data)
+#cumulative_speed(standard_data)
 
 # Produce text file of summary stats
 #-----------------------------------
 setwd(output)
-ice_island_stats(standard_data)
+summary_stats(standard_data)
 
 # Confirm generation of plots
 #----------------------------

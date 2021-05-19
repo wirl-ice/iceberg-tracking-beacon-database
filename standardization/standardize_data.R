@@ -8,7 +8,7 @@
 # Project: Compilation and standardization of iceberg tracking beacon data
 #
 # Description: 
-#   Determines approproiate script to execute to convert raw data to 
+#   Determines appropriate script to execute to convert raw data to 
 #   standardized CSV.
 #   Provides default sensor range values for data cleaning, which are
 #   overwritten by manufacturer values if specified in each function.
@@ -69,6 +69,8 @@ standardize_data <- function(beacon_type, raw_data) {
     gnss_to_csv(raw_data)    
   } else if (beacon_type == "IABP") {
     iabp_to_csv(raw_data)    
+  } else if (beacon_type == "IIP") {
+    iip_to_csv(raw_data)    
   } else if (beacon_type == "NAVIDATUM") {
     navidatum_to_csv(raw_data)    
   } else if (beacon_type == "OCEANETIC") {

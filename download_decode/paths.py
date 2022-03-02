@@ -9,12 +9,14 @@ Keep track of the paths used by the downloader and decorders
 """
 
 #Path to the temporary folder where the sbd are downloaded and stored before they are translated
-tempPath = "/home/wirl/Desktop/CIS/BeaconData/Icebergs_IceIslands_BeaconDatabase/temp_test" 
-
+tempPath = "/home/dmueller/Desktop/CIS/BeaconData/temp_test" 
 
 #Path to the archived folder where the sbd are moved after they are translated
 #Pathway to folder to hold the translated sbds
-archivePath = "/home/wirl/Desktop/CIS/BeaconData/Icebergs_IceIslands_BeaconDatabase/archive"
+archivePath = "/home/dmueller/Desktop/CIS/BeaconData/archive"
 
-#Pathways to the folder the csv are located
-csvPath = "/home/wirl/Desktop/CIS/BeaconData/Icebergs_IceIslands_BeaconDatabase/csv"
+#Pathway to the folder the csv are located
+csvPath = "/home/dmueller/Desktop/CIS/BeaconData/csv"
+
+#Pathway to the folder the log file is located
+logPath = "/home/dmueller/Desktop/CIS/BeaconData/log"

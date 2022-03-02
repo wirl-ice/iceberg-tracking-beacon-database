@@ -59,7 +59,7 @@ sbd_to_csv <- function(raw_data) {
   # 6) Longitude
   if("Longitude" %in% names(raw_data)) {
     longitude <- raw_data$Longitude
-    longitude <- ifelse(raw_data$longitude > 180, -360 + raw_data$longitude, raw_data$longitude)
+    longitude <- ifelse(raw_data$Longitude > 180, -360 + raw_data$Longitude, raw_data$Longitude)
   } else {
     longitude <- NA
   }

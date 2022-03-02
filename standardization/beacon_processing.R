@@ -72,12 +72,12 @@ beacon_type <- args[5]
 #output = "~/Desktop/iceberg_tracking_beacon_database/scripts/standardization/test"
 #script_dir = "~/Desktop/iceberg_tracking_beacon_database/scripts/standardization"
 
-# MetOcean CALIB 
-#beacon_type <- "CALIB_IRIDIUM"
-#filename <- "300234063516450_2017"
-#input = "~/Desktop/iceberg_tracking_beacon_database/scripts/standardization/test"
-#output = "~/Desktop/iceberg_tracking_beacon_database/scripts/standardization/test"
-#script_dir = "~/Desktop/iceberg_tracking_beacon_database/scripts/standardization"
+# # MetOcean CALIB 
+# beacon_type <- "SBD"
+# filename <- "751700"
+# input = "~/Desktop/CIS/BeaconData/csv/"
+# output = "/home/dmueller/Desktop/CIS/BeaconData/std/"
+# script_dir = "~/Documents/GitHub/CIS_Iceberg_Beacon_Database/standardization"
 
 # Cryologger #2
 #beacon_type <- "CRYOLOGGER"
@@ -212,7 +212,8 @@ valid = c("BIO",
           "SVP-I-BXGSA-L-AD",
           "SVP-I-BXGS-LP",
           "SVP-I-XXGS-LP",
-          "WIRL")
+          "WIRL",
+          "SBD")
 
 if(!(beacon_type %in% valid)) {
   stop("'beacon_type' invalid")
@@ -243,7 +244,9 @@ standardize_data(beacon_type, raw_data)
 # Read in CSV data located in output directory. This calls the QC data file which has had duplicate.
 # The following files will also be written to output directory.
 setwd(output)
-standard_data <- read.csv(paste(filename, ".csv", sep = ""), header = TRUE , sep = ",", dec = ".", na.strings = c("NA", "NULL"), strip.white = FALSE, stringsAsFactors = FALSE)
+standard_data <- read.csv(paste(filename, ".csv", sep = ""), header = TRUE , 
+                          sep = ",", dec = ".", na.strings = c("NA", "NULL"), 
+                          strip.white = FALSE, stringsAsFactors = FALSE)
 
 # Check if standardized data has correct format. Returns "True" or "False"
 validation(standard_data)

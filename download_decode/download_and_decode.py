@@ -1,3 +1,4 @@
+#! /usr/bin/env python
   # -*- coding: utf-8 -*-
 """
 Created on Wed Feb 01 10:08:34 2012
@@ -8,14 +9,17 @@ Modified April 2, 2017 by Jill Rajewicz
 
 import os
 import glob
+from datetime import datetime
 
-import sbdDecoder
+from sbd_decoder import decode
 import email, getpass, imaplib
 import shutil
 import logging
+import argparse
 
-from paths import tempPath, archivePath
+from paths import archivePath, logPath, tempPath, csvPath
 
+global tempPath
 
 def decodeFolder():
     '''
@@ -26,13 +30,14 @@ def decodeFolder():
     
     global tempPath    
     
-    
+    sbdfiles = glob.glob( os.path.join(tempPath,'*.sbd'))
+    sbdfiles.sort()
     #Goes through the files in the temporary folder
-    for infile in glob.glob( os.path.join(tempPath,'*.sbd')):
+    for infile in sbdfiles:
         fileName = infile[infile.rfind("\\")+1:]
     
         #Call the sbdDecoder    
-        decodeSuccess = sbdDecoder.main(fileName)
+        decodeSuccess = decode(fileName)
         
         if(decodeSuccess):
             
@@ -46,12 +51,8 @@ def decodeFolder():
             logger.info("In decoding downloaded " + fileName + " was not decoded or transfered to archive")
         
         
-        
-        
 
-
-
-def downloadEmails():
+def downloadEmails(user=None,pwd=None):
     '''
     Function takes a gmail username and password.
     Goes through emails according to search criteria and downloads the attachment from the selected emails
@@ -59,22 +60,27 @@ def downloadEmails():
     See http://www.example-code.com/csharp/imap-search-critera.asp for more search examples
     '''  
     
+    
     global tempPath
     
-    #user = raw_input("Enter your GMail username:")
-    #pwd = getpass.getpass("Enter your password: ")
-   
     '''-----Enter Username and Password for Gmail Here---'''
-    user = "" #enter username and password between quotations
-    pwd = ""
+    # NOTE less secure app access needs to be 'on'
+    #user #enter username user@gmail.com and password between quotations
+    #pwd = ""
     
-    
+    if user == None:
+        user = input("Enter your GMail username:")
+    if pwd == None:    
+        pwd = getpass.getpass("Enter your password: ")
+   
+        
     # connecting to the gmail imap server
     m = imaplib.IMAP4_SSL("imap.gmail.com")
     
     m.login(user,pwd)
     
-    m.select("[Gmail]/All Mail") # here you a can choose a mail box like INBOX instead
+    #m.select("[Gmail]/All Mail") # here you a can choose a mail box like INBOX instead
+    m.select("INBOX")
     # use m.list() to get all the mailboxes
     
     
@@ -85,14 +91,14 @@ def downloadEmails():
     
     '''This seach will open attachments for the UNOPENED emails-----------------------Change this back'''
     #resp, items = m.search(None, "UNSEEN")
+    #resp, items = m.search(None, "SEEN")
     
-    
-    resp, items = m.search(None, "SEEN")
-
+    #TODO -get this to work as an argument since a given date:  https://stackoverflow.com/questions/52054196/python-imaplib-search-email-with-date-and-time#52066820
+    resp, items = m.search(None, "SINCE 4-Aug-2021")
     
     items = items[0].split() # getting the mails id
     
-    print "Looking through " + str(len(items)) + " emails"
+    print ("Looking through " + str(len(items)) + " emails")
     
     #Keep track of the number of emails that were searched
     searched = str(len(items))
@@ -106,8 +112,8 @@ def downloadEmails():
     for emailid in items:
         resp, data = m.fetch(emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
         email_body = data[0][1] # getting the mail content
-        mail = email.message_from_string(email_body) # parsing the mail content to get a mail object
-       
+        #mail = email.message_from_string(email_body) # parsing the mail content to get a mail object
+        mail = email.message_from_bytes(email_body) # parsing the mail content to get a mail object
         #Check if any attachments at all
         if mail.get_content_maintype() != 'multipart':
             continue
@@ -135,15 +141,13 @@ def downloadEmails():
         
                 #Extract the year and month from the email was sent
                 allDate = mail["Date"]
-                            
-                year = allDate[12:16]
-                month = allDate[8:11]
-    
-                #Add the year and month to the end of the file
+                dt = datetime.strptime(allDate, "%a, %d %b %Y %H:%M:%S %Z")            
+                
+                #Add email timestamp to the end of the file
                 filename = part.get_filename()
     
                 dateFileName = filename[:-4]
-                dateFileName = dateFileName + "_" + month + "_" + year
+                dateFileName = dateFileName + "_" + dt.isoformat()
                 dateFileName = dateFileName + filename[-4:]
         
                 filename = dateFileName
@@ -159,8 +163,6 @@ def downloadEmails():
                 #Check if its already there
                 if not os.path.isfile(att_path) :
         
-                  
-                    
                     # finally write the stuff
                     fp = open(att_path, 'wb')
                     fp.write(part.get_payload(decode=True))
@@ -182,24 +184,30 @@ def downloadEmails():
     logger.info(str(repeated) + " emails had repeated attachments and were not downloaded")
     logger.info(str(downloaded) + " attachments were downloaded")
     
-    
-    
-    
-                    
-                  
-
-#Set your working directory here (for the logger)
-homedir = "/home/wirl/Desktop/CIS/BeaconData/Icebergs_IceIslands_BeaconDatabase/gmail_sbd_scripts"
-#homedir = '.'
-
+       
 
 '''For logger'''
 logger = logging.getLogger('coverageConvert')
-hdlr = logging.FileHandler(os.path.join(homedir, 'Download_and_Decode.log'))
+hdlr = logging.FileHandler(os.path.join(logPath, 'Download_and_Decode.log'))
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)                        
-                    
-#downloadEmails()
-decodeFolder()
+
+prog_description = '''Download and Decode SBD messages from gmail
+  all folders are defined in paths.py
+  enter username and password or be prompted
+'''    
+parser = argparse.ArgumentParser(description = prog_description)
+parser.add_argument("-e", "--email", help="downlod emails", action="store_true")
+parser.add_argument("-d", "--decode", help="decode sbd files", action="store_true")
+parser.add_argument("-u", "--user", help="input gmail email address")
+parser.add_argument("-p", "--pwd", help="input gmail email password")
+args = parser.parse_args()
+
+import pdb; pdb.set_trace()       
+
+if args.email: 
+    downloadEmails(args.user, args.pwd)
+if args.decode: 
+    decodeFolder()

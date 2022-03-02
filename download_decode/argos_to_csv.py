@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
 argos2csv.py
 
 This script handles raw ARGOS transmissions (see below) and converts them to a 
@@ -53,13 +52,14 @@ the code below.  At present they are:
 
 TransmitterID, WMO, Latitude, Longitude, LocAccuracy, SatelliteTime, BeaconTime, MessageIndex, AtmPress, BattVoltage, AirTemperature
  2) Any notes from the Argos file are output as a separate text file.
-"""
+
     Version History
     Author              Date                Reason
     --------------------------------------------------------------
     Derek Mueller       Feb 2010           Creation
     Derek Mueller       Apr 2010           Mod to accommodate new id = 6 chars.
     Jill Rajewicz       Nov 2017        Jill Rajewicz       Nov 2017	   Modified to output more fields, skip extraneous ?	          
+    Derek Mueller       Mar 2022         python 3 compat - and refactored a bit but not tested
 """
 
 import glob
@@ -83,7 +83,7 @@ def doy2date(year, doy):
         year = int(year)
     if type(year) == type(2.0):
         year = int(year)
-        print 'Result might be invalid : year coerced to integer'
+        print ('Result might be invalid : year coerced to integer')
     return datetime.datetime(year, 1, 1) + datetime.timedelta(doy - 1)
 
 
@@ -94,8 +94,8 @@ def datetime2iso(datetimeobj):
 if __name__ == "__main__":
     
     if len(sys.argv) == 1:
-        print '''Please supply the beacon id for the argos beacon you wish to process (not WMO number)
-            and then the year to process:  Ex. python argos.py 11257 2009'''           
+        print ('''Please supply the beacon id for the argos beacon you wish to process (not WMO number)
+            and then the year to process:  Ex. python argos.py 11257 2009''' )
         sys.exit(1)
 
     if len(sys.argv) > 1:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         year = sys.argv[2]
         
     if len(sys.argv) > 3:
-        print 'Too many arguments'
+        print ('Too many arguments')
         sys.exit(1)
 
 os.chdir(os.path.join(datadir))
@@ -113,12 +113,12 @@ os.chdir(os.path.join(datadir))
 fname = glob.glob(id+'_'+str(year)+'*.txt')
 print(len(fname))
 if len(fname) != 1:
-    print "Ambiguous file specification"
+    print ("Ambiguous file specification")
     sys.exit(1)
 
 fname = fname[0]
 if not os.path.isfile(fname):
-    print "File does not exist"
+    print ("File does not exist")
     sys.exit(1)
     
 fname_out = os.path.splitext(fname)[0]+'.csv'
@@ -130,15 +130,15 @@ fp = f.readlines()
 f.close()
 
 # make empty lists to add data to.
-TransmitterID = []
-Latitude = []
-Longitude = []
-LocAccuracy = []
+beaconID = []
+lat = []
+lon = []
+locQual = []
 SatelliteTime = []
 BeaconTime = []
 
 MessageIndex = []
-AtmPres = []
+AtmPress = []
 BattVoltage = []
 AirTemperature = []
 
@@ -178,7 +178,7 @@ for i, line in enumerate(fp):
             elif strLoc[-1:] == 'N' or strLoc[-1:] == 'E':
                 numLoc = float(strLoc[:-1])
             else:
-                print line
+                print (line)
             if i == 1:
                 lat.append(numLoc)
             else:
@@ -218,18 +218,18 @@ for i, line in enumerate(fp):
         comments.append(line)
 
 # test to make sure that all the field lists are the same length
-datacheck = numpy.array([len(TransmitterID), len(Latitude), len(Longitude), len(LocAccuracy), 
+datacheck = numpy.array([len(beaconID), len(lat), len(lon), len(locQual), 
                     len(SatelliteTime), len(BeaconTime), len(MessageIndex), len(AtmPress), 
                     len(BattVoltage), len(AirTemperature)])
 
 if datacheck.min() != datacheck.max():
-    print 'Error:  The fields had different numbers of observations'
+    print ('Error:  The fields had different numbers of observations')
     sys.exit(1)
 
 WMO=[]
 
 for i in range(1, datacheck.max()+1):
-    WMO.append(WMO_num)
+    WMO.append(id)
 
 #observation number = comment out if don't want this weird roW!
 #obs = []
@@ -238,8 +238,8 @@ for i in range(1, datacheck.max()+1):
     
 #ok now make a big array with all data
      #first option here is including ALL possible fields - I want to keep all info at this point
-beacon = numpy.asarray([TransmitterID, WMO, Latitude, Longitude, LocAccuracy, SatelliteTime, BeaconTime, MessageIndex, AtmPress, BattVoltage, AirTemperature])
-#beacon = numpy.asarray([beaconID, lat, lon, locQual, gps_time, atmPres, batt, airTemp])
+beacon = numpy.asarray([beaconID, WMO, lat, lon, locQual, SatelliteTime, BeaconTime, MessageIndex, AtmPress, BattVoltage, AirTemperature])
+#beacon = numpy.asarray([beaconID, lat, lon, locQual, gps_time, AtmPress, batt, airTemp])
 beacon = numpy.transpose(beacon)
 
 arr_format = str(beacon.dtype)[1:]

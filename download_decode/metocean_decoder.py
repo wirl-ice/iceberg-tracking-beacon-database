@@ -55,7 +55,7 @@ def main(IMEINumber, sbd_raw):
     formatID = sbd_hex[0:2]
     
     if int(formatID, 16) != 40:
-        print 'problemo'
+        print('problemo')
 
     year_hex = sbd_hex[2:4]
     year_bin = bin(int(year_hex, 16))
@@ -73,15 +73,15 @@ def main(IMEINumber, sbd_raw):
     os.chdir(os.path.join(datadir))
 
     #Output file is the last 6 digits of the IMEI and the year
-    outputFileName = IMEINumber[-6:] + '_' + str(yyyy) + ".csv"
-
+    #outputFileName = IMEINumber[-6:] + '_' + str(yyyy) + ".csv"
+    outputFileName = IMEINumber[-6:] + ".csv"
     
     #Check if file already exists, create it if it does not exist, append to it if it does
     if os.path.exists(outputFileName):
-        outputFile = open(outputFileName, "ab")
+        outputFile = open(outputFileName, "a")
         c = csv.writer(outputFile)
     else:
-        outputFile = open(outputFileName, "wb")
+        outputFile = open(outputFileName, "w")
         c = csv.writer(outputFile)
         c.writerow(["IMEI","Year","Month","Day", "Hour", "Minute","Latitude","Longitude","Temperature","Voltage Battery","AtmPress","FormatID"])
 

@@ -10,15 +10,15 @@ The filename can also be manually set by in the first if statement by chaning th
 import os
 import binascii
 
-import metOceanDecoder
-import oceaneticDecoder
+import metocean_decoder
+import oceanetic_decoder
 
 
 
 from paths import tempPath
 
 
-def main(fileName = ""):
+def decode(fileName = ""):
     
     global tempPath
 
@@ -71,18 +71,18 @@ def main(fileName = ""):
 
     #Check the file size and call the appropriate script
     if(file_size == 21):
-        metOceanDecoder.main(IMEINumber, sbd_raw)
+        metocean_decoder.main(IMEINumber, sbd_raw)
         return True
     elif(file_size == 31):
-        oceaneticDecoder.main(IMEINumber, sbd_raw, yyyy, mm)    #You need to pass the email year and month to the oceanetic decoder
+        oceanetic_decoder.main(IMEINumber, sbd_raw, yyyy, mm)    #You need to pass the email year and month to the oceanetic decoder
         return True
     else:
-        print "Problem: File size does match any known size"
-        print file_size
+        print("Problem: File size does match any known size")
+        print(file_size)
         return False
 
 if __name__ == '__main__':
-    main("")
+    decode("")
     
 
 

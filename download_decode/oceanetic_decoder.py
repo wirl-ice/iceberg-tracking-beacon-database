@@ -170,12 +170,12 @@ def checkYear(yyyy,mm,dd,emailMonth):
 
         #If the month from the email is January and the month from the sbd file is December change the year
         if mm == 12 and emailMonth == "Jan":
-            print "Warning email month does not match sbd month changing year"
+            print("Warning email month does not match sbd month changing year")
             return (yyyy-1)
 
         #If the month from the email is December and the month from the sbd file is January change the year
         if mm == 1 and emailMonth == "Dec":
-            print "Warning the email month does not match the sbd month changing year"
+            print("Warning the email month does not match the sbd month changing year")
             return (yyyy+1)
 
     return yyyy    

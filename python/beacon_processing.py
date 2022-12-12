@@ -8,277 +8,452 @@ Created on Fri Dec  9 10:59:44 2022
 
 
 """
-
-from process_scripts import *
-
-
+import csv
+from datetime import datetime
+import logging
 import glob
+import shutil
 import pandas as pd
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import seaborn as sns
 import numpy as np
 from pathlib import Path
+import pyproj
 
 
 # -----------------------------------------------------------------------------
 # Paths
 # -----------------------------------------------------------------------------
 
-# Specify input path (can be an argument)
-path_input = "/Users/adam/Desktop/data/"
+# Specify input path (to do: make into an argument)
+path_input = "/Volumes/data/iceberg_beacon_database"
 
-
-# -----------------------------------------------------------------------------
-# Standardized column names
-# -----------------------------------------------------------------------------
-
-columns = ["beacon_id", "beacon_type", "datetime_data", "datetime_transmit", 
-           "latitude", "longitude", "vbat", "ta", "ti", "ts", "bp", 
-           "pitch", "roll", "heading", "satellites", "loc_accuracy", 
-           "message_index", "gps_delay", "snr", "ttff"]
+path_input = "/Users/adam/Desktop/iceberg_beacon_database"
 
 # -----------------------------------------------------------------------------
-# Execute functions
+# Configure logging
 # -----------------------------------------------------------------------------
 
-#
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    "%(asctime)s:%(msecs)d %(name)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S"
+)
+
+# -----------------------------------------------------------------------------
+# Beacon deployment test files to confirm function operation
+# -----------------------------------------------------------------------------
+
+# BIO
+file = "/Volumes/data/iceberg_beacon_database/data/2009/300034012616000/raw_data/deployment_file/2009_300034012616000.csv"
+
+# Cryologger
+file = "/Volumes/data/iceberg_beacon_database/data/2018/300434063415160/raw_data/deployment_file/2018_300434063415160.csv"
+
+# CALIB ARGOS
+file = "/Volumes/data/iceberg_beacon_database/data/2009/16795/raw_data/deployment_file/2009_16795.csv"
+file = "/Users/adam/Desktop/iceberg_beacon_database/data/2010/11256/raw_data/deployment_file/2010_11256.csv"
+
+# CALIB Iridium
+file = "/Volumes/data/iceberg_beacon_database/data/2014/300234061763040/raw_data/deployment_file/2014_300234061763040.csv"
+
+# Canatec
+file = "/Volumes/data/iceberg_beacon_database/data/2009/26973/raw_data/deployment_file/2009_26973.csv"  #
+file = "/Volumes/data/iceberg_beacon_database/data/2015/300234062794470/raw_data/deployment_file/2015_300234062794470.csv"  #
+
+# CCG
+file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013458130/raw_data/deployment_file/2011_300034013458130.csv"
+
+# IABP
+file = "/Volumes/data/iceberg_beacon_database/data/2016/300234062950220/raw_data/deployment_file/2016_300234062950220.csv"
+
+# IIP
+file = "/Volumes/data/iceberg_beacon_database/data/2019/3037-2674613/raw_data/deployment_file/2019_3037-2674613.csv"
+
+# Navidatum
+file = "/Volumes/data/iceberg_beacon_database/data/2012/100000000000000/raw_data/deployment_file/2012_100000000000000.csv"
+
+# Oceanetic
+file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013463170/raw_data/deployment_file/2011_300034013463170.csv"
+file = "/Users/adam/Desktop/iceberg_beacon_database/data/2013/300034013460170/raw_data/deployment_file/2013_300034013460170.csv"
+
+# RockSTAR
+file = "/Volumes/data/iceberg_beacon_database/data/2016/300234060172440/raw_data/deployment_file/2016_300234060172440.csv"
+
+# Solara
+file = "/Volumes/data/iceberg_beacon_database/data/2015/300134010204980/raw_data/deployment_file/2015_300134010204980.csv"
+file = "/Volumes/data/iceberg_beacon_database/data/2018/300234066241900/raw_data/deployment_file/2018_300234066241900.csv"
+
+# SVP
+file = "/Volumes/data/iceberg_beacon_database/data/2015/300234060104820/raw_data/deployment_file/2015_300234060104820.csv"  # Received Date (UTC)
+
+# Load test data
+raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
+
+# Display columns
+raw_data.columns
+
+# -----------------------------------------------------------------------------
+# Execute function(s)
+# -----------------------------------------------------------------------------
+
+# Process all data
 process_data(path_input)
 
-#
-clean_data()
-
-#
-create_output_files()
-
+# Generate database
+create_database(path_input)
 
 # -----------------------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------------------
 
+
 def process_data(path_input):
-    
-    # Recurisively search for all files to be processed
-    files = sorted(glob.glob(path_input + "/**/raw_data/deployment_file/*.csv", recursive=True))
-    
-    for file in files: 
-        
+    """
+
+    Batch process iceberg tracking beacon deployment CSV files.
+
+    Parameters
+    ----------
+    path_input : string
+        Path to iceberg beacon database folder.
+
+    Returns
+    -------
+    None.
+
+    """
+
+    # Recursively search for all files to be processed
+    files = sorted(
+        glob.glob(path_input + "/**/raw_data/deployment_file/*.csv", recursive=True)
+    )
+
+    # Process all files
+    for file in files:
+
+        # Get standardized data output path
+        path_output = Path(file).resolve().parents[2] / "standardized_data"
+
+        """
+        # Delete existing files in output path
+        files = glob.glob(str(path_output) + "/*")
+        for f in files:
+            try:
+                os.remove(f)
+            except OSError:
+                pass
+        """
+
         # Get unique beacon ID
         filename = Path(file).stem
-        
+
+        # Set log file path and name
+        logfile = "{}/debug_{}.log".format(path_output, filename)
+
+        # Create file handler and set formatter
+        file_handler = logging.FileHandler(logfile, mode="w")
+        file_handler.setFormatter(formatter)
+
+        # Add handler to the logger
+        logger.addHandler(file_handler)
+
+        logger.info("Processing {}".format(file))
+        print("Processing {}".format(file))
+
         # Load beacon deployment file CSV
-        raw_data = pd.read_csv(file, index_col=False)
-        
-        # Get appropriate function
+        raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
+
+        # Select appropriate processing function
         function_to_call = get_function(filename)
-        
+
         # Process beacon deployment file
-        function_to_call(filename, raw_data)
-    
-    
+        processed_data = function_to_call(file, raw_data)
+
+        # Clean data
+        cleaned_data = clean_data(processed_data)
+
+        # Calculate speed and direction
+        # standardized_data = calculate_velocity(filename, cleaned_data)
+
+        # Create output files
+        create_output_files(file, cleaned_data)
+
+        # Close the log file
+        file_handler.close()
+
+        # Remove the handler from the logger. The default behavior is to pop out
+        # the last added one, which is the file_handler added in the beginning of
+        # this iteration.
+        logger.handlers.pop()
 
 
+def clean_data(input_data):
+    """
+    Assigns NaN to sensor values that exceed the minimum/maximum ranges.
 
-def clean_data(data):
-    
-    return(processed_data)
+    Parameters
+    ----------
+    input_data : Pandas dataframe
+        A Pandas dataframe with standardized columns.
 
+    Returns
+    -------
+    A cleaned Pandas dataframe.
 
-def calculate_speed(input_data):
+    """
 
     # Assign new name to dataframe
     df = input_data
-    
+
+    logger.info("Executing: clean_data()")
+
+    # Latitude
+    df.loc[
+        (df["latitude"] >= latitude_max) | (df["latitude"] <= latitude_min), "latitude"
+    ] = np.nan
+
+    # Longitude
+    df.loc[
+        (df["longitude"] >= latitude_max) | (df["longitude"] <= latitude_min), "longitude"
+    ] = np.nan
+
+    # Air temperature
+    df.loc[(df["ta"] >= ta_max) | (df["ta"] <= ta_min), "ta"] = np.nan
+
+    # Internal temperature
+    df.loc[(df["ti"] >= ti_max) | (df["ti"] <= ti_min), "ti"] = np.nan
+
+    # Surface temperature
+    df.loc[(df["ts"] >= ts_max) | (df["ts"] <= ts_min), "ts"] = np.nan
+
+    # Pressure
+    df.loc[(df["bp"] >= bp_max) | (df["bp"] <= bp_min), "bp"] = np.nan
+
+    # Pitch
+    df.loc[(df["pitch"] >= pitch_max) | (df["pitch"] <= pitch_min), "pitch"] = np.nan
+
+    # Roll
+    df.loc[(df["roll"] >= roll_max) | (df["roll"] <= roll_min), "roll"] = np.nan
+
+    # Heading
+    df.loc[
+        (df["heading"] >= heading_max) | (df["heading"] <= heading_min), "heading"
+    ] = np.nan
+
+    # Satellites
+    df.loc[
+        (df["satellites"] >= satellites_max) | (df["satellites"] <= satellites_min),
+        "satellites",
+    ] = np.nan
+
+    # Battery voltage
+    df.loc[(df["vbat"] >= vbat_max) | (df["vbat"] <= vbat_min), "vbat"] = np.nan
+
+    return df
+
+
+def calculate_velocity(input_data):
+    """
+
+    Calculates direction, back azimuth, distance and speed between iceberg positions.
+
+    Parameters
+    ----------
+    input_data : Pandas dataframe
+        A cleaned Pandas dataframe.
+
+    Returns
+    -------
+    A cleaned Pandas dataframe with calculated velocity information.
+
+    """
+
+    logger.info("Executing: calculate_velocity()")
+
+    # Assign new name to dataframe
+    df = input_data
+    df = cleaned_data
+
     # Initialize pyproj with appropriate ellipsoid
     geodesic = pyproj.Geod(ellps="WGS84")
-    
+
     # Calculate forward azimuth and great circle distance between modelled coordinates
-    df["direction"], back_azimuth, df["distance"] = geodesic.inv(df["longitude"].shift().tolist(), 
-                                                                 df["latitude"].shift().tolist(),
-                                                                 df["longitude"].tolist(), 
-                                                                 df["latitude"].tolist())
-    
+    df["direction"], back_azimuth, df["distance"] = geodesic.inv(
+        df["longitude"].shift().tolist(),
+        df["latitude"].shift().tolist(),
+        df["longitude"].tolist(),
+        df["latitude"].tolist(),
+    )
+
     # Convert azimuth from (-180° to 180°) to (0° to 360°)
     df["direction"] = (df["direction"] + 360) % 360
-    
-    
-    df['time_delta'] = pd.to_timedelta(df['datetime_data'].astype(str)).diff(-1).dt.total_seconds().div(60)
-    
-    df["speed"] = 
-    
-    
-    return(df)
 
-def create_output_files(input_data):
-    
+    df["datetime_data"] = pd.to_datetime(df["datetime_data"])
+    df["time_delta"] = df["datetime_data"].diff()
+
+    # Calculate time between observations
+    df["time_delta"] = (
+        pd.to_timedelta(df["datetime_data"].astype(str))
+        .diff(-1)
+        .dt.total_seconds()
+        .div(60)
+    )
+
+    df["time_delta_float"] = df["time_delta"].total_seconds()
+
+    # Create speed column
+    df["speed"] = df["distance"] / df["time_delta"]
+
+    return df
+
+
+def create_output_files(file, input_data):
+    """
+
+
+    Parameters
+    ----------
+    input_data : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+
+    logger.info("Executing: create_output_files()")
+
+    # Get unique beacon ID
+    filename = Path(file).stem
+
+    # Assign new name to dataframe
+    df = input_data
+
+    # -------------------------------------------------------------------------
+    # Get standardized data output path
+    # -------------------------------------------------------------------------
+    path_output = Path(file).resolve().parents[2] / "standardized_data"
+
+    # -------------------------------------------------------------------------
     # Export to CSV
-    df2.to_csv("{}{}_stats.csv".format(path_output,filename))
-    
-    # Choose file name
-    output_file = filename
-    
-    # Choose output directory 
-    setwd(output)
-    write.csv(standardized_data, paste(output_file, ".csv", sep = ""), row.names=FALSE)
-  
-    
-def get_function(beacon_id):
+    # -------------------------------------------------------------------------
 
-    function_dict = {
-        "1997_12995":process_calib_argos,
-        "2002_1104":process_calib_argos,
-        "2003_11247":process_calib_argos,
-        "2004_16795":process_calib_argos,
-        "2007_11251":process_calib_argos,
-        "2008_11255":process_calib_argos,
-        "2008_16794":process_calib_argos,
-        "2008_300034012610510":process_bio,
-        "2009_11257":process_calib_argos,
-        "2009_12996":process_calib_argos,
-        "2009_16792":process_calib_argos,
-        "2009_16795":process_calib_argos,
-        "2009_26973":process_calib_argos,
-        "2009_300034012519990":process_bio,
-        "2009_300034012571050":process_canatec,
-        "2009_300034012616000":process_bio,
-        "2010_11256":process_calib_argos,
-        "2010_12993":process_calib_argos,
-        "2010_12994":process_calib_argos,
-        "2010_300034012592660":process_canatec,
-        "2010_93693":process_calib_argos,
-        "2011_11247":process_calib_argos,
-        "2011_12995":process_calib_argos,
-        "2011_12997":process_calib_argos,
-        "2011_300034012484860":process_bio,
-        "2011_300034012489850":process_bio,
-        "2011_300034013149880":process_ccg,
-        "2011_300034013439530":process_ccg,
-        "2011_300034013453190":process_ccg,
-        "2011_300034013453240":process_ccg,
-        "2011_300034013458130":process_ccg,
-        "2011_300034013463170":process_oceanetic,
-        "2011_300234010031950":process_svp,
-        "2011_300234010033940":process_svp,
-        "2011_300234010035940_PII-A":process_svp,
-        "2011_300234010035940_PII-B":process_svp,
-        "2011_300234010955690":process_svp,
-        "2011_300234010955700":process_svp,
-        "2011_300234010958690_PII-A":process_svp,
-        "2011_300234010958690_PII-B":process_svp,
-        "2011_300234010959690":process_svp,
-        "2012_1000000000000000":process_navidatum,
-        "2012_11248":process_calib_argos,
-        "2012_11249":process_calib_argos,
-        "2012_11251":process_calib_argos,
-        "2012_11252":process_calib_argos,
-        "2012_300034012480920":process_bio,
-        "2012_300234010082470":process_svp,
-        "2012_300234010132070":process_svp,
-        "2013_300034013460170":process_oceanetic,
-        "2013_300034013461170":process_oceanetic,
-        "2013_300034013464160":process_oceanetic,
-        "2013_300034013464170":process_oceanetic,
-        "2013_300034013468160":process_oceanetic,
-        "2013_300234011240410":process_canatec,
-        "2013_300234011241410":process_canatec,
-        "2013_300234011242410":process_canatec,
-        "2013_300234011938510":process_canatec,
-        "2014_300234060544160":process_svp,
-        "2014_300234061763040":process_calib_iridium,
-        "2015_300134010204980":process_solara,
-        "2015_300134010505190":process_solara,
-        "2015_300134010906790":process_solara,
-        "2015_300134010907780":process_solara,
-        "2015_300234060104820":process_svp,
-        "2015_300234060435010":process_svp,
-        "2015_300234061762030":process_calib_iridium,
-        "2015_300234062790480":process_canatec,
-        "2015_300234062791420":process_canatec,
-        "2015_300234062791700":process_canatec,
-        "2015_300234062792490":process_canatec,
-        "2015_300234062792500":process_canatec,
-        "2015_300234062794470":process_canatec,
-        "2015_300234062795460":process_canatec,
-        "2015_300234062795640":process_canatec,
-        "2015_300234062796490":process_canatec,
-        "2015_300234062796640":process_canatec,
-        "2016_300234060172440":process_rockstar,
-        "2016_300234060172670":process_rockstar,
-        "2016_300234061761040":process_calib_iridium,
-        "2016_300234061763030":process_calib_iridium,
-        "2016_300234061768060":process_calib_iridium,
-        "2016_300234062950220":process_iabp,
-        "2016_300234062951220":process_iabp,
-        "2016_300234062957250":process_iabp,
-        "2016_300234063513450":process_calib_iridium,
-        "2016_300234063515450":process_calib_iridium,
-        "2016_300234064706730":process_rockstar,
-        "2016_300234064808170":process_rockstar,
-        "2016_300234064808210":process_rockstar,
-        "2016_300434063218800":process_rockstar,
-        "2016_300434063417140":process_rockstar,
-        "2017_300234010025000":process_rockstar,
-        "2017_300234060169280":process_rockstar,
-        "2017_300234060177480":process_rockstar,
-        "2017_300234060270020":process_rockstar,
-        "2017_300234060272000":process_rockstar,
-        "2017_300234060276010":process_rockstar,
-        "2017_300234060563100":process_rockstar,
-        "2017_300234060692710":process_rockstar,
-        "2017_300234060699700":process_rockstar,
-        "2017_300234062324750":process_svp,
-        "2017_300234062325760":process_svp,
-        "2017_300234062327750":process_svp,
-        "2017_300234062328750":process_svp,
-        "2017_300234063516450":process_calib_iridium,
-        "2018_300234060362670":process_rockstar,
-        "2018_300234060367670":process_rockstar,
-        "2018_300234062807520":process_rockstar,
-        "2018_300234066241900":process_solara,
-        "2018_300234066549270":process_solara,
-        "2018_300434063411050":process_cryologger,
-        "2018_300434063415110":process_cryologger,
-        "2018_300434063415160":process_cryologger,
-        "2018_300434063416060":process_cryologger,
-        "2018_300434063418130":process_cryologger,
-        "2018_300434063419120":process_cryologger,
-        "2019_1012-2669855":process_iip,
-        "2019_1027-2670078":process_iip,
-        "2019_1124-2670293":process_iip,
-        "2019_2001-2632176":process_iip,
-        "2019_2009-2632235":process_iip,
-        "2019_2011-2632168":process_iip,
-        "2019_2013-2670502":process_iip,
-        "2019_2015-2671136":process_iip,
-        "2019_2020-2671162":process_iip,
-        "2019_2022-2670073":process_iip,
-        "2019_2030-2670510":process_iip,
-        "2019_2040-2670142":process_iip,
-        "2019_2045-2670074":process_iip,
-        "2019_300234060206850":process_rockstar,
-        "2019_300234060370740":process_rockstar,
-        "2019_300234060698700":process_rockstar,
-        "2019_300234063265700":process_cryologger,
-        "2019_300234065254740":process_cryologger,
-        "2019_300434063392070":process_cryologger,
-        "2019_300434063394110":process_cryologger,
-        "2019_300434063494100":process_cryologger,
-        "2019_300434063495310":process_cryologger,
-        "2019_3037-2674613":process_iip,
-        "2019_4013-2674911":process_iip,
-        "2019_4022-2674941":process_iip,
-        "2019_4025-2678597":process_iip,
-        "2019_4027-2670071":process_iip,
-        "2019_4028-2671160":process_iip,
-        "2021_300434065734810":process_cryologger,
-        "2021_300434065732760":process_cryologger,
-        "2021_300434065868240":process_cryologger,
-        "2021_300434065860260":process_cryologger,
-        "2021_300434065869240":process_cryologger,
-        "2021_300434065860320":process_cryologger,
-        "2021_300434065864290":process_cryologger,
-        "2021_300434065861350":process_cryologger,
-        "2021_300434063291950":process_cryologger,
-    }
-    return(function_dict[beacon_id])
+    # Write CSV file without index column
+    df.to_csv("{}/{}_test.csv".format(path_output, filename), index=False)
+
+    # -------------------------------------------------------------------------
+    # Export to shapefile
+    # -------------------------------------------------------------------------
+
+    # Convert to GeoPandas dataframe
+    gdf = gpd.GeoDataFrame(
+        df, geometry=gpd.points_from_xy(df["longitude"], df["latitude"])
+    )
+
+    # Convert datetime columns to string as ESRI driver does not support datetime fields
+    gdf["datetime_data"] = pd.to_datetime(gdf["datetime_data"])
+    gdf["datetime_data"] = gdf["datetime_data"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    gdf["datetime_transmit"] = pd.to_datetime(gdf["datetime_transmit"])
+    gdf["datetime_transmit"] = gdf["datetime_transmit"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Set CRS
+    gdf.crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+    # Output shapefile
+    gdf.to_file("{}/{}.shp".format(path_output, filename), driver="ESRI Shapefile")
+
+
+def create_database(path_input):
+    """
+    Recursively searches for and concatenantes all standardized CSV files.
+
+    Parameters
+    ----------
+    path_input : str
+        Input path to database.
+
+    Returns
+    -------
+    None.
+
+    """
+
+    # Get timestamp
+    date = datetime.now()
+    filename = "database_{}.csv".format(date.strftime("%Y%m%d_%H%M%S"))
+    path_output = "{}/output_data/csv/".format(path_input)
+
+    # Create output path if required
+    try:
+        Path(path_output).mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        print("{} already exists".format(path_output))
+    else:
+        print("{} folder was created".format(path_output))
+
+    files = sorted(
+        glob.glob(path_input + "/**/standardized_data/*_test.csv", recursive=True)
+    )
+
+    # Concatenate CSV files
+    with open(path_output + filename, "w") as outfile:
+        for i, file in enumerate(files):
+            with open(file, "r") as infile:
+                if i != 0:
+                    infile.readline()  # Throw away header on all but first file
+                # Block copy rest of file from input to output without parsing
+                shutil.copyfileobj(infile, outfile)
+                print(file + " has been imported.")
+
+
+
+visualize_data(path_input)
+
+def visualize_data(path_input):
+    
+    logger.info("Executing: visualize_data()")
+
+    # Recursively search for all files to be processed
+    files = sorted(
+        glob.glob(path_input + "/**/standardized_data/*_test.csv", recursive=True)
+    )
+
+    # Process all files
+    for file in files:
+       
+        # Get standardized data output path
+        path_output = Path(file).resolve().parents[0]
+
+        # Get unique beacon ID
+        filename = Path(file).stem
+        
+        print("Visualizing {}".format(filename))
+        
+        # Load standardized CSV file
+        df = pd.read_csv(file, index_col=False)
+
+        # Plot latitude and longitude
+        plt.figure(figsize=(10,10))
+        ax = plt.axes(projection=ccrs.PlateCarree()) 
+        ax.set_adjustable("datalim")
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                          color="black", alpha=0.25, linestyle="dotted",
+                          x_inline=False, y_inline=False)
+        gl.rotate_labels = False
+        gl.top_labels = False
+        gl.right_labels = False
+        
+        gl.xpadding=5
+        sns.scatterplot(x="longitude", y="latitude",
+                        data=df2, s=50, linewidth=1, edgecolor="black", transform=ccrs.PlateCarree())
+        #ax.get_legend().remove()
+        plt.savefig(path_figures + "belcher_upper_day.png", dpi=dpi, transparent=False, bbox_inches="tight")
+
+        break
+    
+

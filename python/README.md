@@ -3,7 +3,34 @@ Author: Adam Garbo
 Date: 2022-12-16
 
 ## Introduction
-This collection of code ingests raw tracking beacon data in comma-separated values (CSV) format, peforms a number of data cleaning steps and outputs a standardized CSV file.
+The Python code ingests raw tracking beacon data in comma-separated values (CSV) format, peforms a number of data cleaning steps and outputs a standardized CSV file.
+
+## Directory structure
+The directory structure of the Iceberg Beacon Database is as follows:
+```
+.
+├── analysis
+│   ├── R				# R code for performing spatial analyses
+│   └── Shapefiles			# Shapefiles used in spatial analyses
+├── data				
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+│           ├── documentation		# Related project documentation
+│           ├── photos			# Photos of tracking beacon deployments
+│           ├── raw_data		# Raw tracking beacon data
+│           │   ├── deployment_file	# Data prepared for ingestion to standardizations scripts
+│           │   └── original_file	# Original, unmodified tracking beacon data
+│           └── standardized_data	# Processed tracking beacon data CSV file
+├── documentation			
+│   └── manuals				# Available tracking beacon instrumentation manuals
+├── output_data
+│   ├── csv				# Shapefiles (line and points) of tracking beacon trajectories
+│   └── shapefiles			# Database files in CSV format 
+└── scripts
+    ├── download_decode			# Python code to download and process SBD data
+    ├── python				# Python scripts to merge standardized CSV files
+    └── standardization			# R scripts to process raw tracking beacon data
+```
 
 ## Python Code
 `beacon_processing.py`

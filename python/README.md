@@ -12,6 +12,8 @@
 `processing_functions.py`
 * Contains Python functions to convert specific beacon types
 
+`beacon_visualization.py` 
+* Code to visualize beacon tracjectories and data
+
 `rename_folders.py`
 * Can be used to recursively search through the entire database and rename folders as desired
-

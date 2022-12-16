@@ -8,6 +8,7 @@ Created on Fri Dec  9 10:59:44 2022
 
 
 """
+
 import csv
 from datetime import datetime
 import logging
@@ -22,7 +23,46 @@ import seaborn as sns
 import numpy as np
 from pathlib import Path
 import pyproj
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
+
+# Add Natural Earth coastline
+coast = cfeature.NaturalEarthFeature(
+    "physical", "land", "10m", edgecolor="black", facecolor="lightgray", lw=0.5
+)
+
+# Add Natural Earth coastline
+coastline = cfeature.NaturalEarthFeature(
+    "physical", "coastline", "10m", edgecolor="black", facecolor="none", lw=0.75
+)
+
+# Seaborn configuration
+sns.set_theme(style="ticks")
+sns.set_context("talk")  # talk, paper, poster
+
+# Global plot parameters
+# plt.rc("legend",fancybox=False, framealpha=1, edgecolor="black")
+
+# Set colour palette
+# sns.palplot(sns.color_palette("colorblind"))
+# colours = sns.color_palette("colorblind", 10).as_hex()
+# sns.set_palette("colorblind", 10)
+
+
+# -----------------------------------------------------------------------------
+# Plotting attributes
+# -----------------------------------------------------------------------------
+
+lw = 1
+interval = 1
+date_format = "%Y-%m-%d"
+
+# Figure DPI
+dpi = 200
 
 # -----------------------------------------------------------------------------
 # Paths
@@ -55,14 +95,12 @@ file = "/Volumes/data/iceberg_beacon_database/data/2018/300434063415160/raw_data
 
 # CALIB ARGOS
 file = "/Volumes/data/iceberg_beacon_database/data/2009/16795/raw_data/deployment_file/2009_16795.csv"
-file = "/Users/adam/Desktop/iceberg_beacon_database/data/2010/11256/raw_data/deployment_file/2010_11256.csv"
 
 # CALIB Iridium
 file = "/Volumes/data/iceberg_beacon_database/data/2014/300234061763040/raw_data/deployment_file/2014_300234061763040.csv"
 
 # Canatec
-file = "/Volumes/data/iceberg_beacon_database/data/2009/26973/raw_data/deployment_file/2009_26973.csv"  #
-file = "/Volumes/data/iceberg_beacon_database/data/2015/300234062794470/raw_data/deployment_file/2015_300234062794470.csv"  #
+file = "/Volumes/data/iceberg_beacon_database/data/2009/26973/raw_data/deployment_file/2009_26973.csv"
 
 # CCG
 file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013458130/raw_data/deployment_file/2011_300034013458130.csv"
@@ -78,17 +116,15 @@ file = "/Volumes/data/iceberg_beacon_database/data/2012/100000000000000/raw_data
 
 # Oceanetic
 file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013463170/raw_data/deployment_file/2011_300034013463170.csv"
-file = "/Users/adam/Desktop/iceberg_beacon_database/data/2013/300034013460170/raw_data/deployment_file/2013_300034013460170.csv"
 
 # RockSTAR
 file = "/Volumes/data/iceberg_beacon_database/data/2016/300234060172440/raw_data/deployment_file/2016_300234060172440.csv"
 
 # Solara
-file = "/Volumes/data/iceberg_beacon_database/data/2015/300134010204980/raw_data/deployment_file/2015_300134010204980.csv"
 file = "/Volumes/data/iceberg_beacon_database/data/2018/300234066241900/raw_data/deployment_file/2018_300234066241900.csv"
 
 # SVP
-file = "/Volumes/data/iceberg_beacon_database/data/2015/300234060104820/raw_data/deployment_file/2015_300234060104820.csv"  # Received Date (UTC)
+file = "/Volumes/data/iceberg_beacon_database/data/2015/300234060104820/raw_data/deployment_file/2015_300234060104820.csv"
 
 # Load test data
 raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
@@ -106,6 +142,9 @@ process_data(path_input)
 # Generate database
 create_database(path_input)
 
+# Create figures
+visualize_maps(path_input)
+visualize_graphs(path_input)
 # -----------------------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------------------
@@ -177,7 +216,7 @@ def process_data(path_input):
         cleaned_data = clean_data(processed_data)
 
         # Calculate speed and direction
-        # standardized_data = calculate_velocity(filename, cleaned_data)
+        standardized_data = calculate_velocity(cleaned_data)
 
         # Create output files
         create_output_files(file, cleaned_data)
@@ -218,7 +257,10 @@ def clean_data(input_data):
 
     # Longitude
     df.loc[
-        (df["longitude"] >= latitude_max) | (df["longitude"] <= latitude_min), "longitude"
+        (df["longitude"] >= longitude_max)
+        | (df["longitude"] <= longitude_min)
+        | (df["longitude"] == 0),
+        "longitude",
     ] = np.nan
 
     # Air temperature
@@ -253,7 +295,10 @@ def clean_data(input_data):
     # Battery voltage
     df.loc[(df["vbat"] >= vbat_max) | (df["vbat"] <= vbat_min), "vbat"] = np.nan
 
-    return df
+    # Drop all rows where latitude or longitude is nan
+    df.dropna(subset=["latitude", "longitude"], inplace=True)
+    
+    return(df)
 
 
 def calculate_velocity(input_data):
@@ -276,7 +321,12 @@ def calculate_velocity(input_data):
 
     # Assign new name to dataframe
     df = input_data
-    df = cleaned_data
+
+    # Convert datetime
+    df["datetime_data"] = pd.to_datetime(df["datetime_data"])
+
+    # Ensure rows are sorted by datetime. Uses datetime_data first and datatime_transmit
+    df.sort_values(by="datetime_data", inplace=True)
 
     # Initialize pyproj with appropriate ellipsoid
     geodesic = pyproj.Geod(ellps="WGS84")
@@ -292,23 +342,13 @@ def calculate_velocity(input_data):
     # Convert azimuth from (-180° to 180°) to (0° to 360°)
     df["direction"] = (df["direction"] + 360) % 360
 
-    df["datetime_data"] = pd.to_datetime(df["datetime_data"])
-    df["time_delta"] = df["datetime_data"].diff()
+    # Calculate time delta between rows (in seconds)
+    df["time_delta"] = df["datetime_data"].diff().dt.total_seconds()
 
-    # Calculate time between observations
-    df["time_delta"] = (
-        pd.to_timedelta(df["datetime_data"].astype(str))
-        .diff(-1)
-        .dt.total_seconds()
-        .div(60)
-    )
-
-    df["time_delta_float"] = df["time_delta"].total_seconds()
-
-    # Create speed column
+    # Calculate speed in m/s
     df["speed"] = df["distance"] / df["time_delta"]
-
-    return df
+    
+    return(df)
 
 
 def create_output_files(file, input_data):
@@ -411,49 +451,142 @@ def create_database(path_input):
                 print(file + " has been imported.")
 
 
+def visualize_maps(path_input):
 
-visualize_data(path_input)
-
-def visualize_data(path_input):
-    
     logger.info("Executing: visualize_data()")
 
     # Recursively search for all files to be processed
     files = sorted(
-        glob.glob(path_input + "/**/standardized_data/*_test.csv", recursive=True)
+        glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
     )
 
     # Process all files
     for file in files:
-       
-        # Get standardized data output path
-        path_output = Path(file).resolve().parents[0]
 
+        # Get standardized data output path
+        #path_output = Path(file).resolve().parents[0]
+        
+        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures"
+        
         # Get unique beacon ID
         filename = Path(file).stem
-        
+
         print("Visualizing {}".format(filename))
-        
+
         # Load standardized CSV file
         df = pd.read_csv(file, index_col=False)
 
         # Plot latitude and longitude
-        plt.figure(figsize=(10,10))
-        ax = plt.axes(projection=ccrs.PlateCarree()) 
+        plt.figure(figsize=(10, 10))
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.add_feature(coast)
         ax.set_adjustable("datalim")
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                          color="black", alpha=0.25, linestyle="dotted",
-                          x_inline=False, y_inline=False)
+        gl = ax.gridlines(
+            crs=ccrs.PlateCarree(),
+            draw_labels=True,
+            color="black",
+            alpha=0.25,
+            linestyle="dotted",
+            x_inline=False,
+            y_inline=False,
+        )
         gl.rotate_labels = False
         gl.top_labels = False
         gl.right_labels = False
+
+        gl.xpadding = 5
+        sns.scatterplot(
+            x="longitude",
+            y="latitude",
+            data=df,
+            linewidth=1,
+            edgecolor="black",
+            transform=ccrs.PlateCarree(),
+        )
+        # ax.get_legend().remove()
+        plt.savefig(
+            "{}/{}.png".format(path_output, filename),
+            dpi=dpi,
+            transparent=False,
+            bbox_inches="tight",
+        )
+        plt.close()
+
+
+        # Daily displacement
+        fig, ax = plt.subplots(figsize=(10,5))
+        ax.grid(ls="dotted")
+        sns.lineplot(x="datetime_data", y="distance", data=df, errorbar=None)
+        ax.set(xlabel=None, ylabel="Speed (m/s)")
+        plt.xticks(rotation=45, horizontalalignment="center")
+        #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
+        sns.despine()
+        #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+        plt.savefig(
+            "{}/{}_speed.png".format(path_output, filename),
+            dpi=dpi,
+            transparent=False,
+            bbox_inches="tight",
+        )
+        plt.close()
+        # Debugging
+        #break
         
-        gl.xpadding=5
-        sns.scatterplot(x="longitude", y="latitude",
-                        data=df2, s=50, linewidth=1, edgecolor="black", transform=ccrs.PlateCarree())
-        #ax.get_legend().remove()
-        plt.savefig(path_figures + "belcher_upper_day.png", dpi=dpi, transparent=False, bbox_inches="tight")
+        
 
-        break
+
+df = pd.read_csv("/Users/adam/Desktop/iceberg_beacon_database/data/2010/11256/standardized_data/2010_11256_test.csv", index_col=False)
+
+
+visualize_graphs(path_input)
+
+def visualize_graphs(path_input):
+
+    logger.info("Executing: visualize_data()")
+
+    # Recursively search for all files to be processed
+    files = sorted(
+        glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
+    )
+
+    # Process all files
+    for file in files:
+
+        # Get standardized data output path
+        #path_output = Path(file).resolve().parents[0]
+        
+        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures"
+        
+        # Get unique beacon ID
+        filename = Path(file).stem
+
+        print("Visualizing {}".format(filename))
+
+        # Load standardized CSV file
+        df = pd.read_csv(file, index_col=False)
+
+        df["datetime_data"] = pd.to_datetime(df["datetime_data"])
     
+    
+        try:
+            # Daily displacement
+            fig, ax = plt.subplots(figsize=(10,5))
+            ax.grid(ls="dotted")
+            sns.lineplot(x="datetime_data", y="speed", data=df, errorbar=None)
+            ax.set(xlabel=None, ylabel="Speed (m/s)")
+            plt.xticks(rotation=45, horizontalalignment="center")
+            #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
+            sns.despine()
+            #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+            plt.savefig(
+                "{}/{}_speed.png".format(path_output, filename),
+                dpi=dpi,
+                transparent=False,
+                bbox_inches="tight",
+            )
+            plt.close()
+        except Exception:
+            pass
 
+        # Debugging
+        #break

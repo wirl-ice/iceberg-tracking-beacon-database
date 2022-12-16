@@ -1,9 +1,17 @@
 # Python
 
-`csv_merge.py`
-* Recursively searches through all `/standardized_data` folders to conacentenate beacon trajectories into a single CSV file.
+`beacon_processing`
+* Main Python script that contains functions to process raw beacon trajectory data
+  * Recursively searches through all database folders to identify files to process
+  * Selects appropriate conversion function
+  * Standardizes data columns
+  * Cleans data according to minimum/maximum values
+  * Calculates velocity
+  * Creates output files
 
-`rename_folders.py`
-* Used to standardize the names of all files and folders in v0.1 of the the database. 
-* Can be used to recursively search through the entire database and rename folders as desired.
+`processing_functions.py`
+* Contains Python functions to convert specific beacon types
+
+'rename_folders.py'
+* Can be used to recursively search through the entire database and rename folders as desired
 

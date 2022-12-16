@@ -43,7 +43,7 @@ columns = [
 
 # Latitude
 latitude_max = 90.0
-latitude_min = 20.0
+latitude_min = 40.0
 
 # Longitude
 longitude_max = -30.0
@@ -403,13 +403,18 @@ def process_canatec(filename, raw_data):
 
     format_1 = "%m/%d/%Y %I:%M:%S %p"
     format_2 = "%Y-%m-%d %H:%M:%S"
-
+    format_3 = "%m/%d/%Y %H:%M"
+    
     if "ReadingDate" in raw_data:
+        df["datetime_data"] = pd.to_datetime(
+            raw_data["ReadingDate"], infer_datetime_format=True)
+        """
         df["datetime_data"] = pd.to_datetime(
             raw_data["ReadingDate"], format=format_1, errors="coerce"
         ).fillna(
             pd.to_datetime(raw_data["ReadingDate"], format=format_2, errors="coerce")
         )
+        """
 
     # Latitude
     if "Latitude" in raw_data:
@@ -439,7 +444,7 @@ def process_canatec(filename, raw_data):
     if "Satellites" in raw_data:
         df["satellites"] = raw_data["Satellites"]
 
-    return df
+    return(df)
 
 
 def process_ccg(filename, raw_data):
@@ -924,24 +929,6 @@ def process_solara(filename, raw_data):
 
     """
 
-    # Beacons with ymd_hms or ymd_hm datetime format (2015-04-23 18:48:37):
-    ymd_hms = [
-        "2015_300134010204980",
-        "2015_300134010505190",
-        "2015_300134010906790",
-        "2015_300134010907780",
-    ]
-
-    # Beacons with dmy_hms datetime format (03/09/2018 17:09:25):
-    dmy_hms = [
-        "2018_300234066241900",
-        "2018_300234066441790",
-        "2018_300234066443790",
-        "2018_300234066545280",
-        "2018_300234066549270",
-        "2018_300234066549280",
-    ]
-
     # Unique beacon ID
     beacon_id = Path(filename).stem
 
@@ -954,11 +941,22 @@ def process_solara(filename, raw_data):
     # Beacon type
     df["beacon_type"] = "solara"
 
+    format_1 = "%Y-%m-%d %H:%M:%S"
+    format_2 = "%d/%m/%Y %H:%M:%S"
+
     if "timestamp" in raw_data:
-        if beacon_id in ymd_hms:
-            df["datetime_data"] = pd.to_datetime(raw_data["timestamp"])
-        elif beacon_id in dmy_hms:
-            df["datetime_data"] = pd.to_datetime(raw_data["timestamp"], dayfirst=True)
+        df["datetime_data"] = pd.to_datetime(
+            raw_data["timestamp"], infer_datetime_format=True) # Using "infer_datetime" is a more eloquent solution
+                   
+                
+        """  
+        df["datetime_data"] = pd.to_datetime(
+            raw_data["timestamp"], format=format_1, errors="coerce"
+        ).fillna(
+            pd.to_datetime(raw_data["timestamp"], format=format_2, errors="coerce")
+        )
+        """
+            
 
     # Latitude
     if "lat" in raw_data:

@@ -1,6 +1,6 @@
 # Python
 
-`beacon_processing`
+`beacon_processing.py`
 * Main Python script that contains functions to process raw beacon trajectory data
   * Recursively searches through all database folders to identify files to process
   * Selects appropriate conversion function

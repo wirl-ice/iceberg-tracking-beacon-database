@@ -1,5 +1,5 @@
 # Iceberg Beacon Database: Standardization
-Author: Adam Garbo
+Author: Adam Garbo  
 Date: 2022-12-16
 
 ## Introduction

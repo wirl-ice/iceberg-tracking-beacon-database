@@ -21,20 +21,19 @@ columns = [
     "datetime_transmit",
     "latitude",
     "longitude",
-    "ta",
-    "ti",
-    "ts",
-    "bp",
+    "temperature_air",
+    "temperature_internal",
+    "temperature_surface",
+    "pressure",
     "pitch",
     "roll",
     "heading",
     "satellites",
-    "vbat",
+    "voltage",
     "loc_accuracy",
-    "message_index",
-    "gps_delay",
-    "snr",
-    "ttff",
+    "distance",
+    "speed",
+
 ]
 
 # -----------------------------------------------------------------------------
@@ -50,20 +49,20 @@ longitude_max = -30.0
 longitude_min = -180.0
 
 # Air temperature
-ta_max = 40.0
-ta_min = -50.0
+temperature_air_max = 40.0
+temperature_air_min = -50.0
 
 # Internal temperature
-ti_max = 40.0
-ti_min = -50.0
+temperature_internal_max = 40.0
+temperature_internal_min = -50.0
 
 # Surface temperature
-ts_max = 40.0
-ts_min = -50.0
+temperature_surface_max = 40.0
+temperature_surface_min = -50.0
 
 # Pressure
-bp_max = 1200.0
-bp_min = 800.0
+pressure_max = 1200.0
+pressure_min = 800.0
 
 # Pitch
 pitch_max = 180.0
@@ -82,28 +81,13 @@ satellites_max = 25
 satellites_min = 0
 
 # Battery voltage
-vbat_max = 25.0
-vbat_min = 0.0
+voltage_max = 25.0
+voltage_min = 0.0
 
 # Location accuracy (Argos)
 loc_accuracy_max = 3
 loc_accuracy_min = 0
 
-# Message index (Argos)
-message_index_max = 254
-message_index_min = 0
-
-# GPS delay
-gps_delay_max = 4095
-gps_delay_min = 0
-
-# SNR
-snr_max = 60
-snr_min = 0
-
-# TTFF
-ttff_max = 254
-ttff_min = 0
 
 # -----------------------------------------------------------------------------
 # Standardization functions
@@ -168,7 +152,7 @@ def process_bio(filename, raw_data):
 
     # Battery voltage
     if "VOLTAGE" in raw_data:
-        df["vbat"] = raw_data["VOLTAGE"]
+        df["voltage"] = raw_data["VOLTAGE"]
 
     return df
 
@@ -241,23 +225,19 @@ def process_calib_argos(filename, raw_data):
 
     # Air temperature
     if "AirTemperature" in raw_data:
-        df["ta"] = raw_data["AirTemperature"]
+        df["temperature_air"] = raw_data["AirTemperature"]
 
     # Barometric pressure
     if "AtmPressure" in raw_data:
-        df["bp"] = raw_data["AtmPressure"]
+        df["pressure"] = raw_data["AtmPressure"]
 
     # Battery voltage
     if "BattVoltage" in raw_data:
-        df["vbat"] = raw_data["BattVoltage"]
+        df["voltage"] = raw_data["BattVoltage"]
 
     # Battery voltage
     if "LocAccuracy" in raw_data:
         df["loc_accuracy"] = raw_data["LocAccuracy"]
-
-    # Battery voltage
-    if "MessageIndex" in raw_data:
-        df["message_index"] = raw_data["MessageIndex"]
 
     return df
 
@@ -318,27 +298,15 @@ def process_calib_iridium(filename, raw_data):
 
     # Surface temperature
     if "SST" in raw_data:
-        df["ts"] = raw_data["SST"]
+        df["temperature_surface"] = raw_data["SST"]
 
     # Barometric pressure
     if "BP" in raw_data:
-        df["bp"] = raw_data["BP"]
+        df["pressure"] = raw_data["BP"]
 
     # Battery voltage
     if "VBAT" in raw_data:
-        df["vbat"] = raw_data["VBAT"]
-
-    # GPS delay
-    if "GPSDELAY" in raw_data:
-        df["gps_delay"] = raw_data["GPSDELAY"]
-
-    # Signal to noise ratio
-    if "SNR" in raw_data:
-        df["snr"] = raw_data["SNR"]
-
-    # Time to first fix
-    if "TTFF" in raw_data:
-        df["ttff"] = raw_data["TTFF"]
+        df["voltage"] = raw_data["VBAT"]
 
     return df
 
@@ -426,19 +394,19 @@ def process_canatec(filename, raw_data):
 
     # Air temperature
     if "TempExternal" in raw_data:
-        df["ta"] = raw_data["TempExternal"]
+        df["temperature_air"] = raw_data["TempExternal"]
 
     # Internal temperature
     if "TempInternal" in raw_data:
-        df["ti"] = raw_data["TempInternal"]
+        df["temperature_int"] = raw_data["TempInternal"]
 
     # Barometric pressure
     if "Pressure" in raw_data:
-        df["bp"] = raw_data["Pressure"]
+        df["pressure"] = raw_data["Pressure"]
 
     # Battery voltage
     if "BatteryVoltage" in raw_data:
-        df["vbat"] = raw_data["BatteryVoltage"]
+        df["voltage"] = raw_data["BatteryVoltage"]
 
     # Satellites
     if "Satellites" in raw_data:
@@ -567,15 +535,15 @@ def process_cryologger(filename, raw_data):
 
     # 7) Battery voltage
     if "voltage" in raw_data:
-        df["vbat"] = raw_data["voltage"]
+        df["voltage"] = raw_data["voltage"]
 
     # 9) Internal temperature
     if "temperature" in raw_data:
-        df["ti"] = raw_data["temperature"]
+        df["temperature_int"] = raw_data["temperature"]
 
     # 11) Barometric pressure
     if "pressure" in raw_data:
-        df["bp"] = raw_data["pressure"] * 10  # Convert to hPa
+        df["pressure"] = raw_data["pressure"] * 10  # Convert to hPa
 
     # 12) Pitch
     if "pitch" in raw_data:
@@ -655,7 +623,7 @@ def process_iabp(filename, raw_data):
 
     # Surface temperature
     if "Ts" in raw_data:
-        df["ts"] = raw_data["Ts"]
+        df["temperature_surface"] = raw_data["Ts"]
 
     return df
 
@@ -840,15 +808,15 @@ def process_oceanetic(filename, raw_data):
 
     # Longitude
     if "Temperature" in raw_data:
-        df["ti"] = raw_data["Temperature"]
+        df["temperature_int"] = raw_data["Temperature"]
 
     # Pressure
     if "AtmPress" in raw_data:
-        df["bp"] = raw_data["AtmPress"]
+        df["pressure"] = raw_data["AtmPress"]
 
     # Longitude
     if "Voltage Battery" in raw_data:
-        df["vbat"] = raw_data["Voltage Battery"]
+        df["voltage"] = raw_data["Voltage Battery"]
 
     return df
 
@@ -947,17 +915,7 @@ def process_solara(filename, raw_data):
     if "timestamp" in raw_data:
         df["datetime_data"] = pd.to_datetime(
             raw_data["timestamp"], infer_datetime_format=True) # Using "infer_datetime" is a more eloquent solution
-                   
-                
-        """  
-        df["datetime_data"] = pd.to_datetime(
-            raw_data["timestamp"], format=format_1, errors="coerce"
-        ).fillna(
-            pd.to_datetime(raw_data["timestamp"], format=format_2, errors="coerce")
-        )
-        """
-            
-
+    
     # Latitude
     if "lat" in raw_data:
         df["latitude"] = raw_data["lat"]
@@ -1063,39 +1021,25 @@ def process_svp(filename, raw_data):
 
     # Air temperature
     if "AT" in raw_data:
-        df["ta"] = raw_data["AT"]
+        df["temperature_air"] = raw_data["AT"]
 
     # Surface temperature
     if "SST" in raw_data:
-        df["ts"] = raw_data["SST"]
+        df["temperature_surface"] = raw_data["SST"]
 
     # Barometric pressure
     if "BP" in raw_data:
-        df["bp"] = raw_data["BP"]
+        df["pressure"] = raw_data["BP"]
 
     # Battery voltage
     if "VBAT" in raw_data:
-        df["vbat"] = raw_data["VBAT"]
-
-    # GPS delay
-    if "GPSDELAY" in raw_data:
-        df["gps_delay"] = raw_data["GPSDELAY"]
-
-    # Signal to noise ratio
-    if "SNR" in raw_data:
-        df["snr"] = raw_data["SNR"]
-
-    # Time to first fix
-    if "TTFF" in raw_data:
-        df["ttff"] = raw_data["TTFF"]
+        df["voltage"] = raw_data["VBAT"]
 
     return df
 
 
 def get_function(beacon_id):
     """
-
-
     Parameters
     ----------
     beacon_id : str
@@ -1264,6 +1208,13 @@ def get_function(beacon_id):
         "2021_300434065864290": process_cryologger,
         "2021_300434065861350": process_cryologger,
         "2021_300434063291950": process_cryologger,
+        "2021_300234011750690": process_calib_iridium,
+        "2021_300234011750710": process_calib_iridium,
+        "2021_300234011751700": process_calib_iridium,
+        "2021_300234011752700": process_calib_iridium,
+        "2021_300234060725890": process_calib_iridium,
+        "2023_300434063290950": process_cryologger,
+
     }
     function = function_dict[beacon_id]
 

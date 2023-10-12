@@ -1,0 +1,11 @@
+name: itbd
+channels:
+- conda-forge
+dependencies:
+  - python=3.11.6
+  - spyder=5.4.3
+  - pandas=2.1.1
+  - geopandas=0.14.0
+  - seaborn=0.13.0
+  - cartopy=0.22.0
+  - pathlib=1.0.1

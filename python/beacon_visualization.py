@@ -15,6 +15,7 @@ such as speed, distance, and temperature.
 
 """
 
+import array
 import logging
 import glob
 from pathlib import Path
@@ -25,9 +26,6 @@ import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import pyproj
-from pyproj import Proj
-
 
 # -----------------------------------------------------------------------------
 # Configure logging
@@ -78,16 +76,13 @@ coastline = cfeature.NaturalEarthFeature(
 # -----------------------------------------------------------------------------
 
 # Specify input path (to do: make into an argument)
-path_input = "/Volumes/data/iceberg_beacon_database"
+path_input = "/Volumes/data/iceberg_tracking_beacon_database"
 
 # Removed data only
-path_input = "/Volumes/data/iceberg_beacon_database/removed_data"
+path_input = "/Volumes/data/iceberg_tracking_beacon_database/removed_data"
 
 # Local testing
 path_input = "/Users/adam/Desktop/iceberg_beacon_database"
-
-
-
 
 # -----------------------------------------------------------------------------
 # Functions
@@ -105,6 +100,9 @@ def visualize_maps(path_input):
         glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
     )
 
+    # Start with most recent datasets first
+    files.reverse()
+
     # Process all files
     for file in files:
 
@@ -112,7 +110,7 @@ def visualize_maps(path_input):
         path_output = Path(file).resolve().parents[0]
         
         # Debugging only
-        path_output = "/Users/adam/Desktop/iceberg-beacon-database/figures"
+        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures/maps"
         
         # Get unique beacon ID
         filename = Path(file).stem
@@ -120,7 +118,7 @@ def visualize_maps(path_input):
         print("Visualizing {}".format(filename))
 
         # Debugging only
-        #file = "/Users/adam/Desktop/iceberg-beacon-database/2000_11254.csv"
+        #file = "/Volumes/data/iceberg_tracking_beacon_database/data/2017/300234062327750/standardized_data/2017_300234062327750.csv"
 
         # Load standardized CSV file
         df = pd.read_csv(file, index_col=False)
@@ -167,8 +165,10 @@ def visualize_maps(path_input):
         end_date = df["datetime_data"].iloc[-1]
         duration = df["datetime_data"].iloc[-1] - df["datetime_data"].iloc[0]
         distance = df["distance"].sum() / 1000
+        observations = len(df.index)
         
-        ax.text(-0.125, 1.025, "%s %s\nStart: %s End: %s\nDuration: %s Distance: %d km" % (beacon_type, beacon_id, start_date, end_date, duration, distance),
+        
+        ax.text(-0.125, 1.025, "Beacon: %s ID: %s\nStart: %s End: %s\nDuration: %s Distance: %d km Observations: %d" % (beacon_type, beacon_id, start_date, end_date, duration, distance, observations),
         #verticalalignment='top', horizontalalignment='left',
         transform=ax.transAxes,
         color='black', fontsize=18)
@@ -183,7 +183,7 @@ def visualize_maps(path_input):
         plt.close()
         
         # Debugging to run function only once
-        #break
+        break
         
 def visualize_graphs(path_input):
 
@@ -194,46 +194,73 @@ def visualize_graphs(path_input):
         glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
     )
     
+    files = files.reverse()
+    
     # Process all files
     for file in files:
-
-        # Get standardized data output path
-        path_output = Path(file).resolve().parents[0]
-        
-        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures"
-        
-        # Get unique beacon ID
-        filename = Path(file).stem
-
-        df = pd.read_csv("/Users/adam/Desktop/iceberg-beacon-database/2000_11254.csv")
-
-        print("Visualizing {}".format(filename))
-
-        # Load standardized CSV file
-        df = pd.read_csv(file, index_col=False)
-
-        # Convert datetime
-        df["datetime_data"] = pd.to_datetime(df["datetime_data"])
-    
         try:
+            # Get standardized data output path
+            #path_output = Path(file).resolve().parents[0]
+            
+            # Debugging only
+            path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures/graphs"
+            
+            # Get unique beacon ID
+            filename = Path(file).stem
+    
+            print("Visualizing {}".format(filename))
+            
+            # Debugging only
+            #file = "/Volumes/data/iceberg_tracking_beacon_database/data/2016/300234062951220/standardized_data/2016_300234062951220.csv"
+     
+            # Load standardized CSV file
+            df = pd.read_csv(file, index_col=False)
+    
+            # Convert datetime
+            df["datetime_data"] = pd.to_datetime(df["datetime_data"])
+
+            temperature = df["temperature_air"]
+            
+            if df["temperature_air"].isnull().all():
+                temperature = df["temperature_surface"]
+                if df["temperature_surface"].isnull().all():
+                    temperature = df["temperature_internal"]
+                    if df["temperature_internal"].isnull().all():
+                        temperature = 0
+                
+ 
             # Daily displacement
             fig, ax = plt.subplots(figsize=(10,5))
             ax.grid(ls="dotted")
-            sns.lineplot(x="datetime_data", y="speed", data=df, errorbar=None)
+            sns.lineplot(x="datetime_data", y="temperature_surface", data=df, errorbar=None)
+            ax.set(xlabel=None, ylabel="Temperature (°C)")
+            plt.xticks(rotation=45, horizontalalignment="center")
+            #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
+            sns.despine()
+            #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+            
+            
+            # Daily displacement
+            fig, ax = plt.subplots(figsize=(10,5))
+            ax.grid(ls="dotted")
+            sns.lineplot(x="datetime_data", y=distance, data=df, errorbar=None)
             ax.set(xlabel=None, ylabel="Speed (m/s)")
             plt.xticks(rotation=45, horizontalalignment="center")
             #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
             sns.despine()
             #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+                      
+        
             plt.savefig(
-                "{}/{}_speed.png".format(path_output, filename),
+                "{}/{}_temperature.png".format(path_output, filename),
                 dpi=dpi,
                 transparent=False,
                 bbox_inches="tight",
             )
             plt.close()
+            
         except Exception:
             pass
 
         # Debugging
-        #break
+        break

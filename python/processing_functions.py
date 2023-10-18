@@ -375,7 +375,7 @@ def process_canatec(filename, raw_data):
     
     if "ReadingDate" in raw_data:
         df["datetime_data"] = pd.to_datetime(
-            raw_data["ReadingDate"], infer_datetime_format=True)
+            raw_data["ReadingDate"]) # , infer_datetime_format=True is now deprecated
         """
         df["datetime_data"] = pd.to_datetime(
             raw_data["ReadingDate"], format=format_1, errors="coerce"
@@ -398,7 +398,7 @@ def process_canatec(filename, raw_data):
 
     # Internal temperature
     if "TempInternal" in raw_data:
-        df["temperature_int"] = raw_data["TempInternal"]
+        df["temperature_internal"] = raw_data["TempInternal"]
 
     # Barometric pressure
     if "Pressure" in raw_data:
@@ -414,6 +414,93 @@ def process_canatec(filename, raw_data):
 
     return(df)
 
+def process_iceb(filename, raw_data):
+    """
+    Function to convert raw MetOcean Ice Beacon  data to a standardized CSV
+    before further processing to 'quality added' files.
+    
+    Sensor range values are from 
+    Operation Manual
+
+    Raw data columns (case sensitive):
+    -----------------------------------
+    ReadingDate
+    Latitude
+    Longitude
+    Elevation
+    Heading
+    Speed
+    Fix
+    Satellites
+    HDOP
+    VDOP
+    VerticalVelocity
+    Pressure
+    TempExternal
+    TempInternal
+    BeaconAlarmState
+    BatteryVoltage
+    ModemVoltage
+
+    Parameters
+    ----------
+    filename : string
+        Path to deployment CSV file.
+    raw_data : Pandas dataframe
+        Pandas dataframe of beacon deployment CSV file.
+
+    Returns
+    -------
+    Standardized Pandas dataframe ready for cleaning.
+
+    """
+
+    # Unique beacon ID
+    beacon_id = Path(filename).stem
+
+    # Create an empty data frame of length equal to the CSV that is filled with NAs
+    df = pd.DataFrame(np.nan, index=np.arange(len(raw_data)), columns=columns)
+
+    # Unique beacon identifier
+    df["beacon_id"] = beacon_id
+
+    # Beacon type
+    df["beacon_type"] = "canatec"
+
+    # Data timestamp
+    if "ReadingDate" in raw_data:
+        df["datetime_data"] = pd.to_datetime(
+            raw_data["ReadingDate"], "%m/%d/%Y %I:%M:%S %p") # 7/16/2009 6:15:00 PM
+
+    # Latitude
+    if "Latitude" in raw_data:
+        df["latitude"] = raw_data["Latitude"]
+
+    # Longitude
+    if "Longitude" in raw_data:
+        df["longitude"] = raw_data["Longitude"]
+
+    # Air temperature
+    if "TempExternal" in raw_data:
+        df["temperature_air"] = raw_data["TempExternal"]
+
+    # Internal temperature
+    if "TempInternal" in raw_data:
+        df["temperature_internal"] = raw_data["TempInternal"]
+
+    # Barometric pressure
+    if "Pressure" in raw_data:
+        df["pressure"] = raw_data["Pressure"]
+
+    # Battery voltage
+    if "BatteryVoltage" in raw_data:
+        df["voltage"] = raw_data["BatteryVoltage"]
+
+    # Satellites
+    if "Satellites" in raw_data:
+        df["satellites"] = raw_data["Satellites"]
+
+    return(df)
 
 def process_ccg(filename, raw_data):
     """
@@ -482,8 +569,9 @@ def process_cryologger(filename, raw_data):
     iridium_cep
     data
     unixtime
-    temperature
-    pressure
+    temperature_int
+    humidity_int
+    pressure_int
     pitch
     roll
     heading
@@ -538,12 +626,12 @@ def process_cryologger(filename, raw_data):
         df["voltage"] = raw_data["voltage"]
 
     # 9) Internal temperature
-    if "temperature" in raw_data:
-        df["temperature_int"] = raw_data["temperature"]
+    if "temperature_int" in raw_data:
+        df["temperature_internal"] = raw_data["temperature_int"]
 
     # 11) Barometric pressure
-    if "pressure" in raw_data:
-        df["pressure"] = raw_data["pressure"] * 10  # Convert to hPa
+    if "pressure_int" in raw_data:
+        df["pressure"] = raw_data["pressure_int"] * 10  # Convert to hPa
 
     # 12) Pitch
     if "pitch" in raw_data:
@@ -586,6 +674,7 @@ def process_iabp(filename, raw_data):
     Lat
     Lon
     BP
+    Ta
     Ts
 
     Parameters
@@ -610,8 +699,9 @@ def process_iabp(filename, raw_data):
     # Beacon type
     df["beacon_type"] = "iabp"
 
-    if "Date" in raw_data:
-        df["datetime_data"] = pd.to_datetime(raw_data["Date"])
+    if "DOY" in raw_data:
+        df["datetime_data"] = pd.to_datetime(raw_data["Year"], format="%Y") \
+                     + raw_data["DOY"].sub(1).apply(pd.Timedelta, unit='D')
 
     # Latitude
     if "Lat" in raw_data:
@@ -621,10 +711,18 @@ def process_iabp(filename, raw_data):
     if "Lon" in raw_data:
         df["longitude"] = raw_data["Lon"]
 
+    # Air temperature
+    if "Ta" in raw_data:
+        df["temperature_air"] = raw_data["Ta"]
+        
     # Surface temperature
     if "Ts" in raw_data:
         df["temperature_surface"] = raw_data["Ts"]
 
+    # Pressure
+    if "BP" in raw_data:
+        df["pressure"] = raw_data["BP"]
+        
     return df
 
 
@@ -808,7 +906,7 @@ def process_oceanetic(filename, raw_data):
 
     # Longitude
     if "Temperature" in raw_data:
-        df["temperature_int"] = raw_data["Temperature"]
+        df["temperature_internal"] = raw_data["Temperature"]
 
     # Pressure
     if "AtmPress" in raw_data:
@@ -909,13 +1007,14 @@ def process_solara(filename, raw_data):
     # Beacon type
     df["beacon_type"] = "solara"
 
-    format_1 = "%Y-%m-%d %H:%M:%S"
-    format_2 = "%d/%m/%Y %H:%M:%S"
+    #format_1 = "%Y-%m-%d %H:%M:%S"
+    #format_2 = "%d/%m/%Y %H:%M:%S"
 
     if "timestamp" in raw_data:
-        df["datetime_data"] = pd.to_datetime(
-            raw_data["timestamp"], infer_datetime_format=True) # Using "infer_datetime" is a more eloquent solution
-    
+
+            df["datetime_data"] = pd.to_datetime(
+                raw_data["timestamp"])
+
     # Latitude
     if "lat" in raw_data:
         df["latitude"] = raw_data["lat"]
@@ -1055,8 +1154,10 @@ def get_function(beacon_id):
 
     function_dict = {
         "1997_12995": process_calib_argos,
+        "2000_11254": process_calib_argos,
         "2002_1104": process_calib_argos,
         "2003_11247": process_calib_argos,
+        "2003_11255": process_calib_argos,
         "2004_16795": process_calib_argos,
         "2007_11251": process_calib_argos,
         "2008_11255": process_calib_argos,
@@ -1068,7 +1169,7 @@ def get_function(beacon_id):
         "2009_16795": process_calib_argos,
         "2009_26973": process_canatec,
         "2009_300034012519990": process_bio,
-        "2009_300034012571050": process_canatec,
+        "2009_300034012571050": process_canatec, #iceb
         "2009_300034012616000": process_bio,
         "2010_11256": process_calib_argos,
         "2010_12993": process_calib_argos,
@@ -1078,6 +1179,7 @@ def get_function(beacon_id):
         "2011_11247": process_calib_argos,
         "2011_12995": process_calib_argos,
         "2011_12997": process_calib_argos,
+        "2011_16793": process_calib_argos,
         "2011_300034012484860": process_bio,
         "2011_300034012489850": process_bio,
         "2011_300034013149880": process_ccg,
@@ -1100,6 +1202,7 @@ def get_function(beacon_id):
         "2012_11249": process_calib_argos,
         "2012_11251": process_calib_argos,
         "2012_11252": process_calib_argos,
+        "2012_300034012480860": process_bio,
         "2012_300034012480920": process_bio,
         "2012_300234010082470": process_oceanetic,
         "2012_300234010132070": process_svp,
@@ -1165,6 +1268,10 @@ def get_function(beacon_id):
         "2018_300234062807520": process_rockstar,
         "2018_300234066241900": process_solara,
         "2018_300234066549270": process_solara,
+        "2018_300234066545280": process_solara,
+        "2018_300234066443790": process_solara,
+        "2018_300234066549280": process_solara,
+        
         "2018_300434063411050": process_cryologger,
         "2018_300434063415110": process_cryologger,
         "2018_300434063415160": process_cryologger,
@@ -1208,6 +1315,7 @@ def get_function(beacon_id):
         "2021_300434065864290": process_cryologger,
         "2021_300434065861350": process_cryologger,
         "2021_300434063291950": process_cryologger,
+        "2021_300434063497310": process_cryologger,
         "2021_300234011750690": process_calib_iridium,
         "2021_300234011750710": process_calib_iridium,
         "2021_300234011751700": process_calib_iridium,

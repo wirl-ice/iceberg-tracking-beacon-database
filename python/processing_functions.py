@@ -33,7 +33,6 @@ columns = [
     "loc_accuracy",
     "distance",
     "speed",
-
 ]
 
 # -----------------------------------------------------------------------------
@@ -372,10 +371,11 @@ def process_canatec(filename, raw_data):
     format_1 = "%m/%d/%Y %I:%M:%S %p"
     format_2 = "%Y-%m-%d %H:%M:%S"
     format_3 = "%m/%d/%Y %H:%M"
-    
+
     if "ReadingDate" in raw_data:
         df["datetime_data"] = pd.to_datetime(
-            raw_data["ReadingDate"]) # , infer_datetime_format=True is now deprecated
+            raw_data["ReadingDate"]
+        )  # , infer_datetime_format=True is now deprecated
         """
         df["datetime_data"] = pd.to_datetime(
             raw_data["ReadingDate"], format=format_1, errors="coerce"
@@ -412,14 +412,15 @@ def process_canatec(filename, raw_data):
     if "Satellites" in raw_data:
         df["satellites"] = raw_data["Satellites"]
 
-    return(df)
+    return df
+
 
 def process_iceb(filename, raw_data):
     """
     Function to convert raw MetOcean Ice Beacon  data to a standardized CSV
     before further processing to 'quality added' files.
-    
-    Sensor range values are from 
+
+    Sensor range values are from
     Operation Manual
 
     Raw data columns (case sensitive):
@@ -470,7 +471,8 @@ def process_iceb(filename, raw_data):
     # Data timestamp
     if "ReadingDate" in raw_data:
         df["datetime_data"] = pd.to_datetime(
-            raw_data["ReadingDate"], "%m/%d/%Y %I:%M:%S %p") # 7/16/2009 6:15:00 PM
+            raw_data["ReadingDate"], "%m/%d/%Y %I:%M:%S %p"
+        )  # 7/16/2009 6:15:00 PM
 
     # Latitude
     if "Latitude" in raw_data:
@@ -500,7 +502,8 @@ def process_iceb(filename, raw_data):
     if "Satellites" in raw_data:
         df["satellites"] = raw_data["Satellites"]
 
-    return(df)
+    return df
+
 
 def process_ccg(filename, raw_data):
     """
@@ -700,8 +703,9 @@ def process_iabp(filename, raw_data):
     df["beacon_type"] = "iabp"
 
     if "DOY" in raw_data:
-        df["datetime_data"] = pd.to_datetime(raw_data["Year"], format="%Y") \
-                     + raw_data["DOY"].sub(1).apply(pd.Timedelta, unit='D')
+        df["datetime_data"] = pd.to_datetime(raw_data["Year"], format="%Y") + raw_data[
+            "DOY"
+        ].sub(1).apply(pd.Timedelta, unit="D")
 
     # Latitude
     if "Lat" in raw_data:
@@ -714,7 +718,7 @@ def process_iabp(filename, raw_data):
     # Air temperature
     if "Ta" in raw_data:
         df["temperature_air"] = raw_data["Ta"]
-        
+
     # Surface temperature
     if "Ts" in raw_data:
         df["temperature_surface"] = raw_data["Ts"]
@@ -722,7 +726,7 @@ def process_iabp(filename, raw_data):
     # Pressure
     if "BP" in raw_data:
         df["pressure"] = raw_data["BP"]
-        
+
     return df
 
 
@@ -1007,13 +1011,11 @@ def process_solara(filename, raw_data):
     # Beacon type
     df["beacon_type"] = "solara"
 
-    #format_1 = "%Y-%m-%d %H:%M:%S"
-    #format_2 = "%d/%m/%Y %H:%M:%S"
+    # format_1 = "%Y-%m-%d %H:%M:%S"
+    # format_2 = "%d/%m/%Y %H:%M:%S"
 
     if "timestamp" in raw_data:
-
-            df["datetime_data"] = pd.to_datetime(
-                raw_data["timestamp"])
+        df["datetime_data"] = pd.to_datetime(raw_data["timestamp"])
 
     # Latitude
     if "lat" in raw_data:
@@ -1169,7 +1171,7 @@ def get_function(beacon_id):
         "2009_16795": process_calib_argos,
         "2009_26973": process_canatec,
         "2009_300034012519990": process_bio,
-        "2009_300034012571050": process_canatec, #iceb
+        "2009_300034012571050": process_canatec,  # iceb
         "2009_300034012616000": process_bio,
         "2010_11256": process_calib_argos,
         "2010_12993": process_calib_argos,
@@ -1271,7 +1273,6 @@ def get_function(beacon_id):
         "2018_300234066545280": process_solara,
         "2018_300234066443790": process_solara,
         "2018_300234066549280": process_solara,
-        
         "2018_300434063411050": process_cryologger,
         "2018_300434063415110": process_cryologger,
         "2018_300434063415160": process_cryologger,
@@ -1322,7 +1323,6 @@ def get_function(beacon_id):
         "2021_300234011752700": process_calib_iridium,
         "2021_300234060725890": process_calib_iridium,
         "2023_300434063290950": process_cryologger,
-
     }
     function = function_dict[beacon_id]
 

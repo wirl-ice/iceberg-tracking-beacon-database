@@ -67,20 +67,16 @@ A CSV will be produced with the following column headings:
 | datetime_transmit | YYYY-MM-DD hh:mm:ss  |
 | latitude | DD  |
 | longitude | DD |
-| vbat | V  |
-| ta | °C  |
-| ti | °C  |
-| ts | °C |
-| bp | hPa |
+| temperature_air | °C  |
+| temperature_internal | °C  |
+| temperature_surface | °C |
+| pressure | hPa |
 | pitch | ° |
 | roll | ° |
 | heading | ° |
 | satellites | # |
+| voltage | V  |
 | loc_accuarcy |   |
-| message_index |   |
-| gps_delay |   |
-| snr |   |
-| ttff |   |
 | distance | m |
 | speed | m/s |
 
@@ -93,7 +89,7 @@ A CSV will be produced with the following column headings:
 **4. Statistics**
 * To follow 
 
-**5. Debug Log**
+**5. Debug log**
 * A text file that includes information debugging information that is produced when each function is called. Can be used to troubleshoot issues with standardizing a particular dataset or beacon type.
 
 

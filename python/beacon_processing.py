@@ -6,22 +6,20 @@ Created on Fri Dec  9 10:59:44 2022
 @title: Compilation and standardization of iceberg tracking beacon data
 @author: Adam Garbo
 
-
 """
 
-import csv
+import os
+import datetime as dt
 from datetime import datetime
 import logging
 import glob
+from pathlib import Path
 import shutil
 import pandas as pd
 import geopandas as gpd
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
-import matplotlib.dates as mdates
-import seaborn as sns
+from shapely.geometry import Point, LineString, shape
+import fiona 
 import numpy as np
-from pathlib import Path
 import pyproj
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -30,101 +28,68 @@ import cartopy.feature as cfeature
 # Configuration
 # -----------------------------------------------------------------------------
 
-# Add Natural Earth coastline
-coast = cfeature.NaturalEarthFeature(
-    "physical", "land", "10m", edgecolor="black", facecolor="lightgray", lw=0.5
-)
-
-# Add Natural Earth coastline
-coastline = cfeature.NaturalEarthFeature(
-    "physical", "coastline", "10m", edgecolor="black", facecolor="none", lw=0.75
-)
-
-# Seaborn configuration
-sns.set_theme(style="ticks")
-sns.set_context("talk")  # talk, paper, poster
-
-# Global plot parameters
-# plt.rc("legend",fancybox=False, framealpha=1, edgecolor="black")
-
-# Set colour palette
-# sns.palplot(sns.color_palette("colorblind"))
-# colours = sns.color_palette("colorblind", 10).as_hex()
-# sns.set_palette("colorblind", 10)
-
-
-# -----------------------------------------------------------------------------
-# Plotting attributes
-# -----------------------------------------------------------------------------
-
-lw = 1
-interval = 1
-date_format = "%Y-%m-%d"
-
-# Figure DPI
-dpi = 200
-
-# -----------------------------------------------------------------------------
-# Paths
-# -----------------------------------------------------------------------------
-
-# Specify input path (to do: make into an argument)
-path_input = "/Volumes/data/iceberg_beacon_database"
-
-path_input = "/Users/adam/Desktop/iceberg_beacon_database"
-
-# -----------------------------------------------------------------------------
-# Configure logging
-# -----------------------------------------------------------------------------
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(
     "%(asctime)s:%(msecs)d %(name)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S"
 )
 
+# Enable fiona driver
+gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
+
+# -----------------------------------------------------------------------------
+# Folder paths
+# -----------------------------------------------------------------------------
+
+# Specify input path (to do: make into an argument)
+path_input = "/Volumes/data/iceberg_tracking_beacon_database/data"
+
+# Local testing
+path_input = "/Users/adam/Desktop/iceberg_beacon_database"
+
+
 # -----------------------------------------------------------------------------
 # Beacon deployment test files to confirm function operation
 # -----------------------------------------------------------------------------
 
 # BIO
-file = "/Volumes/data/iceberg_beacon_database/data/2009/300034012616000/raw_data/deployment_file/2009_300034012616000.csv"
+file = path_input + "/data/2009/300034012616000/raw_data/deployment_file/2009_300034012616000.csv"
 
 # Cryologger
-file = "/Volumes/data/iceberg_beacon_database/data/2018/300434063415160/raw_data/deployment_file/2018_300434063415160.csv"
+file = path_input + "/data/2018/300434063415160/raw_data/deployment_file/2018_300434063415160.csv"
 
 # CALIB ARGOS
-file = "/Volumes/data/iceberg_beacon_database/data/2009/16795/raw_data/deployment_file/2009_16795.csv"
+file = path_input + "/data/2009/16795/raw_data/deployment_file/2009_16795.csv"
 
 # CALIB Iridium
-file = "/Volumes/data/iceberg_beacon_database/data/2014/300234061763040/raw_data/deployment_file/2014_300234061763040.csv"
+file = path_input + "/data/2014/300234061763040/raw_data/deployment_file/2014_300234061763040.csv"
 
 # Canatec
-file = "/Volumes/data/iceberg_beacon_database/data/2009/26973/raw_data/deployment_file/2009_26973.csv"
+file = path_input + "/data/2009/26973/raw_data/deployment_file/2009_26973.csv"
 
 # CCG
-file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013458130/raw_data/deployment_file/2011_300034013458130.csv"
+file = path_input + "/data/2011/300034013458130/raw_data/deployment_file/2011_300034013458130.csv"
 
 # IABP
-file = "/Volumes/data/iceberg_beacon_database/data/2016/300234062950220/raw_data/deployment_file/2016_300234062950220.csv"
+file = path_input + "/data/2016/300234062950220/raw_data/deployment_file/2016_300234062950220.csv"
 
 # IIP
-file = "/Volumes/data/iceberg_beacon_database/data/2019/3037-2674613/raw_data/deployment_file/2019_3037-2674613.csv"
+file = path_input + "/data/2019/3037-2674613/raw_data/deployment_file/2019_3037-2674613.csv"
 
 # Navidatum
-file = "/Volumes/data/iceberg_beacon_database/data/2012/100000000000000/raw_data/deployment_file/2012_100000000000000.csv"
+file = path_input + "/data/2012/100000000000000/raw_data/deployment_file/2012_100000000000000.csv"
 
 # Oceanetic
-file = "/Volumes/data/iceberg_beacon_database/data/2011/300034013463170/raw_data/deployment_file/2011_300034013463170.csv"
+file = path_input + "/data/2011/300034013463170/raw_data/deployment_file/2011_300034013463170.csv"
 
 # RockSTAR
-file = "/Volumes/data/iceberg_beacon_database/data/2016/300234060172440/raw_data/deployment_file/2016_300234060172440.csv"
+file = path_input + "/data/2016/300234060172440/raw_data/deployment_file/2016_300234060172440.csv"
 
 # Solara
-file = "/Volumes/data/iceberg_beacon_database/data/2018/300234066241900/raw_data/deployment_file/2018_300234066241900.csv"
+file = path_input + "/data/2018/300234066241900/raw_data/deployment_file/2018_300234066241900.csv"
 
 # SVP
-file = "/Volumes/data/iceberg_beacon_database/data/2015/300234060104820/raw_data/deployment_file/2015_300234060104820.csv"
+file = path_input + "/data/2015/300234060104820/raw_data/deployment_file/2015_300234060104820.csv"
 
 # Load test data
 raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
@@ -139,16 +104,21 @@ raw_data.columns
 # Process all data
 process_data(path_input)
 
+
+# Problem IDs:
+2009_300034012571050
+2010_300034012592660
+   
 # Generate database
 create_database(path_input)
 
 # Create figures
 visualize_maps(path_input)
 visualize_graphs(path_input)
+
 # -----------------------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------------------
-
 
 def process_data(path_input):
     """
@@ -170,65 +140,71 @@ def process_data(path_input):
     files = sorted(
         glob.glob(path_input + "/**/raw_data/deployment_file/*.csv", recursive=True)
     )
-
+    
+    # Start with most recent datasets first
+    files.reverse()
+    
     # Process all files
     for file in files:
-
-        # Get standardized data output path
-        path_output = Path(file).resolve().parents[2] / "standardized_data"
-
-        """
-        # Delete existing files in output path
-        files = glob.glob(str(path_output) + "/*")
-        for f in files:
-            try:
-                os.remove(f)
-            except OSError:
-                pass
-        """
-
-        # Get unique beacon ID
-        filename = Path(file).stem
-
-        # Set log file path and name
-        logfile = "{}/debug_{}.log".format(path_output, filename)
-
-        # Create file handler and set formatter
-        file_handler = logging.FileHandler(logfile, mode="w")
-        file_handler.setFormatter(formatter)
-
-        # Add handler to the logger
-        logger.addHandler(file_handler)
-
-        logger.info("Processing {}".format(file))
-        print("Processing {}".format(file))
-
-        # Load beacon deployment file CSV
-        raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
-
-        # Select appropriate processing function
-        function_to_call = get_function(filename)
-
-        # Process beacon deployment file
-        processed_data = function_to_call(file, raw_data)
-
-        # Clean data
-        cleaned_data = clean_data(processed_data)
-
-        # Calculate speed and direction
-        standardized_data = calculate_velocity(cleaned_data)
-
-        # Create output files
-        create_output_files(file, cleaned_data)
-
-        # Close the log file
-        file_handler.close()
-
-        # Remove the handler from the logger. The default behavior is to pop out
-        # the last added one, which is the file_handler added in the beginning of
-        # this iteration.
-        logger.handlers.pop()
-
+        
+        try:
+            # Get standardized data output path
+            path_output = Path(file).resolve().parents[2] / "standardized_data"
+    
+            # Delete existing files in output path
+            files = glob.glob(str(path_output) + "/*")
+            for f in files:
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
+    
+                      
+            # Get unique beacon ID
+            filename = Path(file).stem
+    
+            # Set log file path and name
+            logfile = "{}/{}.log".format(path_output, filename)
+    
+            # Create file handler and set formatter
+            file_handler = logging.FileHandler(logfile, mode="w")
+            file_handler.setFormatter(formatter)
+    
+            # Add handler to the logger
+            logger.addHandler(file_handler)
+    
+            logger.info("Processing {}".format(filename))
+            print("Processing {}".format(file))
+    
+            # Load beacon deployment file CSV
+            raw_data = pd.read_csv(file, index_col=False, skipinitialspace=True)
+    
+            # Select appropriate processing function
+            function_to_call = get_function(filename)
+    
+            # Process beacon deployment file
+            processed_data = function_to_call(file, raw_data)
+    
+            # Clean data
+            cleaned_data = clean_data(processed_data)
+    
+            # Calculate speed and direction
+            standardized_data = calculate_velocity(cleaned_data)
+    
+            # Create output files
+            create_output_files(file, cleaned_data)
+    
+            # Close the log file
+            file_handler.close()
+    
+            # Remove the handler from the logger. The default behavior is to pop out
+            # the last added one, which is the file_handler added in the beginning of
+            # this iteration.
+            logger.handlers.pop()
+            
+            #break
+        except OSError:
+            pass
 
 def clean_data(input_data):
     """
@@ -264,16 +240,16 @@ def clean_data(input_data):
     ] = np.nan
 
     # Air temperature
-    df.loc[(df["ta"] >= ta_max) | (df["ta"] <= ta_min), "ta"] = np.nan
+    df.loc[(df["temperature_air"] >= temperature_air_max) | (df["temperature_air"] <= temperature_air_min), "temperature_air"] = np.nan
 
     # Internal temperature
-    df.loc[(df["ti"] >= ti_max) | (df["ti"] <= ti_min), "ti"] = np.nan
+    df.loc[(df["temperature_internal"] >= temperature_internal_max) | (df["temperature_internal"] <= temperature_internal_min), "temperature_internal"] = np.nan
 
     # Surface temperature
-    df.loc[(df["ts"] >= ts_max) | (df["ts"] <= ts_min), "ts"] = np.nan
+    df.loc[(df["temperature_surface"] >= temperature_surface_max) | (df["temperature_surface"] <= temperature_surface_min), "temperature_surface"] = np.nan
 
     # Pressure
-    df.loc[(df["bp"] >= bp_max) | (df["bp"] <= bp_min), "bp"] = np.nan
+    df.loc[(df["pressure"] >= pressure_max) | (df["pressure"] <= pressure_min), "pressure"] = np.nan
 
     # Pitch
     df.loc[(df["pitch"] >= pitch_max) | (df["pitch"] <= pitch_min), "pitch"] = np.nan
@@ -293,10 +269,13 @@ def clean_data(input_data):
     ] = np.nan
 
     # Battery voltage
-    df.loc[(df["vbat"] >= vbat_max) | (df["vbat"] <= vbat_min), "vbat"] = np.nan
+    df.loc[(df["voltage"] >= voltage_max) | (df["voltage"] <= voltage_min), "voltage"] = np.nan
 
     # Drop all rows where latitude or longitude is nan
-    df.dropna(subset=["latitude", "longitude"], inplace=True)
+    df.dropna(subset=["latitude", "longitude"], inplace=True)  
+    
+    df = df.round({"temperature_air": 2, "temperature_internal": 2, "temperature_surface": 2, \
+                   "pressure": 2, "pitch": 2, "roll": 2, "heading": 2, "voltage": 2}) 
     
     return(df)
 
@@ -340,13 +319,19 @@ def calculate_velocity(input_data):
     )
 
     # Convert azimuth from (-180° to 180°) to (0° to 360°)
-    df["direction"] = (df["direction"] + 360) % 360
+    df["direction"] = ((df["direction"] + 360) % 360).round(2)
 
     # Calculate time delta between rows (in seconds)
     df["time_delta"] = df["datetime_data"].diff().dt.total_seconds()
 
     # Calculate speed in m/s
     df["speed"] = df["distance"] / df["time_delta"]
+    
+    # Round columns
+    #df = df.round({"distance": 1, "speed": 2, "direction": 2}) # Not working?
+    df["distance"] = df["distance"].round(2)
+    df["direction"] = df["direction"].round(2)
+    df["speed"] = df["speed"].round(4)
     
     return(df)
 
@@ -384,12 +369,16 @@ def create_output_files(file, input_data):
     # -------------------------------------------------------------------------
 
     # Write CSV file without index column
-    df.to_csv("{}/{}_test.csv".format(path_output, filename), index=False)
-
+    df.to_csv("{}/{}.csv".format(path_output, filename), index=False)
+    logger.info("Filename: {}.csv".format(filename))
+    
     # -------------------------------------------------------------------------
     # Export to shapefile
     # -------------------------------------------------------------------------
-
+    
+    # Debugging only
+    #df = pd.read_csv("/Volumes/data/iceberg_tracking_beacon_database/data/2023/300434063290950/standardized_data/2023_300434063290950.csv", index_col=False)
+    
     # Convert to GeoPandas dataframe
     gdf = gpd.GeoDataFrame(
         df, geometry=gpd.points_from_xy(df["longitude"], df["latitude"])
@@ -406,8 +395,21 @@ def create_output_files(file, input_data):
 
     # Output shapefile
     gdf.to_file("{}/{}.shp".format(path_output, filename), driver="ESRI Shapefile")
+    
+    # -------------------------------------------------------------------------
+    # Export to KML
+    # -------------------------------------------------------------------------
+    
+    # Enable fiona driver
+    gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
 
+    line_gdf = gdf.groupby(['beacon_id'])['geometry'].apply(lambda x: LineString(x.tolist()))
 
+    with fiona.Env():
+        gdf.to_file("{}/{}_point.kml".format(path_output, filename), driver="KML")
+        line_gdf.to_file("{}/{}_line.kml".format(path_output, filename), driver="KML")
+    
+    
 def create_database(path_input):
     """
     Recursively searches for and concatenantes all standardized CSV files.
@@ -426,7 +428,7 @@ def create_database(path_input):
     # Get timestamp
     date = datetime.now()
     filename = "database_{}.csv".format(date.strftime("%Y%m%d_%H%M%S"))
-    path_output = "{}/output_data/csv/".format(path_input)
+    path_output = "{}/release/csv/".format(path_input)
 
     # Create output path if required
     try:
@@ -437,7 +439,7 @@ def create_database(path_input):
         print("{} folder was created".format(path_output))
 
     files = sorted(
-        glob.glob(path_input + "/**/standardized_data/*_test.csv", recursive=True)
+        glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
     )
 
     # Concatenate CSV files
@@ -450,143 +452,4 @@ def create_database(path_input):
                 shutil.copyfileobj(infile, outfile)
                 print(file + " has been imported.")
 
-
-def visualize_maps(path_input):
-
-    logger.info("Executing: visualize_data()")
-
-    # Recursively search for all files to be processed
-    files = sorted(
-        glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
-    )
-
-    # Process all files
-    for file in files:
-
-        # Get standardized data output path
-        #path_output = Path(file).resolve().parents[0]
-        
-        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures"
-        
-        # Get unique beacon ID
-        filename = Path(file).stem
-
-        print("Visualizing {}".format(filename))
-
-        # Load standardized CSV file
-        df = pd.read_csv(file, index_col=False)
-
-        # Plot latitude and longitude
-        plt.figure(figsize=(10, 10))
-        ax = plt.axes(projection=ccrs.PlateCarree())
-        ax.add_feature(coast)
-        ax.set_adjustable("datalim")
-        gl = ax.gridlines(
-            crs=ccrs.PlateCarree(),
-            draw_labels=True,
-            color="black",
-            alpha=0.25,
-            linestyle="dotted",
-            x_inline=False,
-            y_inline=False,
-        )
-        gl.rotate_labels = False
-        gl.top_labels = False
-        gl.right_labels = False
-
-        gl.xpadding = 5
-        sns.scatterplot(
-            x="longitude",
-            y="latitude",
-            data=df,
-            linewidth=1,
-            edgecolor="black",
-            transform=ccrs.PlateCarree(),
-        )
-        # ax.get_legend().remove()
-        plt.savefig(
-            "{}/{}.png".format(path_output, filename),
-            dpi=dpi,
-            transparent=False,
-            bbox_inches="tight",
-        )
-        plt.close()
-
-
-        # Daily displacement
-        fig, ax = plt.subplots(figsize=(10,5))
-        ax.grid(ls="dotted")
-        sns.lineplot(x="datetime_data", y="distance", data=df, errorbar=None)
-        ax.set(xlabel=None, ylabel="Speed (m/s)")
-        plt.xticks(rotation=45, horizontalalignment="center")
-        #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
-        sns.despine()
-        #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
-        plt.savefig(
-            "{}/{}_speed.png".format(path_output, filename),
-            dpi=dpi,
-            transparent=False,
-            bbox_inches="tight",
-        )
-        plt.close()
-        # Debugging
-        #break
-        
-        
-
-
-df = pd.read_csv("/Users/adam/Desktop/iceberg_beacon_database/data/2010/11256/standardized_data/2010_11256_test.csv", index_col=False)
-
-
-visualize_graphs(path_input)
-
-def visualize_graphs(path_input):
-
-    logger.info("Executing: visualize_data()")
-
-    # Recursively search for all files to be processed
-    files = sorted(
-        glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
-    )
-
-    # Process all files
-    for file in files:
-
-        # Get standardized data output path
-        #path_output = Path(file).resolve().parents[0]
-        
-        path_output = "/Users/adam/Desktop/iceberg_beacon_database/figures"
-        
-        # Get unique beacon ID
-        filename = Path(file).stem
-
-        print("Visualizing {}".format(filename))
-
-        # Load standardized CSV file
-        df = pd.read_csv(file, index_col=False)
-
-        df["datetime_data"] = pd.to_datetime(df["datetime_data"])
     
-    
-        try:
-            # Daily displacement
-            fig, ax = plt.subplots(figsize=(10,5))
-            ax.grid(ls="dotted")
-            sns.lineplot(x="datetime_data", y="speed", data=df, errorbar=None)
-            ax.set(xlabel=None, ylabel="Speed (m/s)")
-            plt.xticks(rotation=45, horizontalalignment="center")
-            #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
-            sns.despine()
-            #ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
-            plt.savefig(
-                "{}/{}_speed.png".format(path_output, filename),
-                dpi=dpi,
-                transparent=False,
-                bbox_inches="tight",
-            )
-            plt.close()
-        except Exception:
-            pass
-
-        # Debugging
-        #break

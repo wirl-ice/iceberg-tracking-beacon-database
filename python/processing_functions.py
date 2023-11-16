@@ -1322,6 +1322,7 @@ def get_function(beacon_id):
         "2021_300234011751700": process_calib_iridium,
         "2021_300234011752700": process_calib_iridium,
         "2021_300234060725890": process_calib_iridium,
+        "2021_300234011751690": process_calib_iridium,
         "2023_300434063290950": process_cryologger,
     }
     function = function_dict[beacon_id]

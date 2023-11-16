@@ -82,7 +82,7 @@ path_input = "/Volumes/data/iceberg_tracking_beacon_database"
 path_input = "/Volumes/data/iceberg_tracking_beacon_database/removed_data"
 
 # Local testing
-path_input = "/Users/adam/Desktop/iceberg_beacon_database"
+path_input = "/Users/adam/Desktop/iceberg_tracking_beacon_database"
 
 # -----------------------------------------------------------------------------
 # Functions
@@ -206,7 +206,7 @@ def visualize_graphs(path_input):
         glob.glob(path_input + "/**/standardized_data/*.csv", recursive=True)
     )
 
-    files = files.reverse()
+    #files = files.reverse()
 
     # Process all files
     for file in files:
@@ -244,19 +244,9 @@ def visualize_graphs(path_input):
             fig, ax = plt.subplots(figsize=(10, 5))
             ax.grid(ls="dotted")
             sns.lineplot(
-                x="datetime_data", y="temperature_surface", data=df, errorbar=None
+                x="datetime_data", y=temperature, data=df, errorbar=None
             )
             ax.set(xlabel=None, ylabel="Temperature (°C)")
-            plt.xticks(rotation=45, horizontalalignment="center")
-            # ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
-            sns.despine()
-            # ax.legend(loc="center", bbox_to_anchor=(0.5, -0.35), ncol=2)
-
-            # Daily displacement
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.grid(ls="dotted")
-            sns.lineplot(x="datetime_data", y=distance, data=df, errorbar=None)
-            ax.set(xlabel=None, ylabel="Speed (m/s)")
             plt.xticks(rotation=45, horizontalalignment="center")
             # ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
             sns.despine()

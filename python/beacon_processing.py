@@ -42,10 +42,7 @@ gpd.io.file.fiona.drvsupport.supported_drivers["KML"] = "rw"
 # -----------------------------------------------------------------------------
 
 # Specify input path (to do: make into an argument)
-path_input = "/Volumes/data/iceberg_tracking_beacon_database/data"
-
-# Local testing
-path_input = "/Users/adam/Desktop/iceberg_beacon_database"
+path_input = "/Volumes/data/iceberg_tracking_beacon_database"
 
 
 # -----------------------------------------------------------------------------
@@ -453,7 +450,8 @@ def create_output_files(file, input_data):
     gdf.crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
     # Output shapefile
-    gdf.to_file("{}/{}.shp".format(path_output, filename), driver="ESRI Shapefile")
+    #gdf.to_file("{}/{}.shp".format(path_output, filename), driver="ESRI Shapefile")
+    gdf.to_file("{}/{}.gpkg".format(path_output, filename), driver="GPKG")
 
     # -------------------------------------------------------------------------
     # Export to KML

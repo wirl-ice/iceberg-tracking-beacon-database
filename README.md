@@ -11,32 +11,49 @@ Drift direction, speed, and pattern data from satellite tracking beacons deploye
 
 ## Repository Contents
 
+
+MOVE TO README FOR DATABASE
+
 ```
 .
+|── documentation           # Database documentation
+├── database                # 
+|   |── metadata            # Metadata table in CSV format
+│   ├── track_data			# All beacon tracks in CSV format
+│   └── postgis	    		# or gpkg ?  a complete database
+├── raw_data                # Raw tracking beacon data
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+│           ├── raw_data		# Raw tracking beacon data
+│           │   ├── deployment_file	# Data prepared for ingestion to standardizations scripts
+│           │   └── original_file	# Original, unmodified tracking beacon data
+│           └── standardized_data	# Processed tracking beacon data CSV file
+├── standardized_data	    # Processed beacon track data in CSV, GPKG and KML formats
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+├── deployment_notes	    # Ancillary information regarding the icebergs and deployments
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+├── photos	                # Photos and videos of the icebergs and deployments
+│   └── <year>				# Year of collected tracking beacon data
+│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
+├── dbeacon_model_info  	# Available tracking beacon instrumentation manuals, spec sheets and other info		
+│   └── <Model>             # Organized by beacon model
+
+Not included? 
+
+└── scripts
+    ├── download_decode			# Python code to download and process SBD data
+    ├── python				# Python scripts to merge standardized CSV files
+    └── standardization			# R scripts to process raw tracking beacon data
+
 ├── analysis
 │   ├── figures                         # Spatial analysis produced figures
 │   ├── Python				# Python code for plotting spatial data
 │   ├── R		                # R code for performing spatial analyses
 │   └── Shapefiles			# Shapefiles used in spatial analyses
-├── data				
-│   └── <year>				# Year of collected tracking beacon data
-│       └── <IMEI>			# Tracking beacon IMEI or unique identifier
-│           ├── documentation		# Related project documentation
-│           ├── photos			# Photos of tracking beacon deployments
-│           ├── raw_data		# Raw tracking beacon data
-│           │   ├── deployment_file	# Data prepared for ingestion to standardizations scripts
-│           │   └── original_file	# Original, unmodified tracking beacon data
-│           └── standardized_data	# Processed tracking beacon data CSV file
-├── documentation			
-│   └── manuals				# Available tracking beacon instrumentation manuals
-├── output_data
-│   ├── csv				# Database files in CSV format
-│   └── shapefiles			# Shapefiles (line and points) of tracking beacon trajectories 
-└── scripts
-    ├── download_decode			# Python code to download and process SBD data
-    ├── python				# Python scripts to merge standardized CSV files
-    └── standardization			# R scripts to process raw tracking beacon data
-    
+
+
 ```
 
 ## Publications

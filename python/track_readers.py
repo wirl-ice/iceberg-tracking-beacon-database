@@ -24,6 +24,25 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import datetime as dt
+from collections import namedtuple
+
+
+def nolog():
+    """
+    Create a logger instance that doesn't do anything.
+
+    Used to allow logging or not in the code below
+
+    Returns
+    -------
+    NoOpLogger
+        A named tuple that mimics a log instance.
+
+    """
+    NoOpLogger = namedtuple(
+        "NoOpLogger", ["debug", "info", "warning", "error", "critical"]
+    )
+    return NoOpLogger(*([lambda *args, **kwargs: None] * 5))
 
 
 def create_sdf(nrows):
@@ -106,7 +125,7 @@ def create_sdf(nrows):
 # -----------------------------------------------------------------------------
 
 
-def standard(raw_data_file):
+def standard(raw_data_file, log=None):
     """
     Convert standardized data format to standardized dataframe.
 
@@ -121,6 +140,8 @@ def standard(raw_data_file):
     ----------
     raw_data_file : string
         Path to raw data CSV file (which in this case is in the standard format)
+    log : logger
+        A logger instance
 
     Returns
     -------
@@ -132,6 +153,10 @@ def standard(raw_data_file):
     See create_sdf function
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -169,7 +194,7 @@ def standard(raw_data_file):
     return sdf
 
 
-def calib_argos(raw_data_file, comments=False):
+def calib_argos(raw_data_file, log=None):
     """
     Convert raw data from CALIB ARGOS format to standardized dataframe.
 
@@ -177,15 +202,11 @@ def calib_argos(raw_data_file, comments=False):
     ----------
     raw_data_file : string
         Path to raw data CSV file.
-    comments : Boolean, optional
-        returns comments in the file instead of data. The default is False.
 
     Returns
     -------
     sdf : Pandas DataFrame
         Standardized Pandas dataframe ready for cleaning.
-    comment_list : list
-        A list of comments extracted from the raw data file
 
     Raw data format
     ----------------------------------
@@ -198,203 +219,187 @@ def calib_argos(raw_data_file, comments=False):
         a comment  - none of the above
 
     """
-    #    try:
-    # Read the whole file:
-    f = open(raw_data_file, mode="r", errors="replace")  # TODO handle encoding errors
-    fp = f.readlines()
-    f.close()
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
 
-    # get the id of the beacon from the file name and the year
-    year, ID = Path(raw_data_file).stem.split("_")
+    try:
+        # Read the whole file:
+        f = open(raw_data_file, mode="r", errors="replace")
+        fp = f.readlines()
+        f.close()
 
-    # empty lists to fill with data
-    latitude = []
-    longitude = []
-    loc_accuracy = []
-    datetime_transmit = []
-    datetime_data = []
-    message_index = []
-    pressure = []
-    voltage = []
-    temperature_internal = []
-    comments = []
+        # get the id of the beacon from the file name and the year
+        year, ID = Path(raw_data_file).stem.split("_")
 
-    # obs1 and 2 hold the index for each one of the 2 data lines
-    obs1 = []
-    obs2 = []
-    for i, line in enumerate(fp):
-        fields = line.split()
-        if len(fields) == 0:  # nothing on the line
-            continue
-        elif ID in fields[0]:
-            if (
-                fields[1] != "NO"
-            ):  # sometimes NO LOCATION happens... then the record needs to be ignored.
-                obs1.append(i)
-        elif "(" in fields[0]:  # hope that no comment lines start with '('
-            obs2.append(i)
-        # all other non-blank lines are comments
-        else:
-            comments.append(line)
+        # empty lists to fill with data
+        latitude = []
+        longitude = []
+        loc_accuracy = []
+        datetime_transmit = []
+        datetime_data = []
+        message_index = []
+        pressure = []
+        voltage = []
+        temperature_internal = []
+        comments = []
 
-    # need to keep track of the year (for both trans and data)
-    trans_year = year
-    data_year = year
-    trans_doy = 0
-    data_doy = 0
-
-    # pass through again and load up the lists
-    for o1 in obs1:
-        if o1 + 1 in obs2:  # this makes sure that the obs1 is followed by obs2
-            fields = fp[o1].split()
-
-            # Lat and Lon:
-            for j in range(1, 3):
-                strLoc = fields[j]
-                if strLoc[-1:] == "S" or strLoc[-1:] == "W":
-                    numLoc = float(strLoc[:-1]) * -1
-                elif strLoc[-1:] == "N" or strLoc[-1:] == "E":
-                    numLoc = float(strLoc[:-1])
-                else:
-                    print(line)
-                if j == 1:
-                    latitude.append(numLoc)
-                else:
-                    longitude.append(numLoc)
-            # location quality
-            loc_accuracy.append(int(fields[3]))
-
-            # dates/times
-            trans_time, data_time = fields[4].split("-")
-
-            # trans time is time of transmission
-            if trans_time[0] == "?":
-                datetime_transmit.append(np.nan)
-            else:
+        # obs1 and 2 hold the index for each one of the 2 data lines
+        obs1 = []
+        obs2 = []
+        for i, line in enumerate(fp):
+            fields = line.split()
+            if len(fields) == 0:  # nothing on the line
+                continue
+            elif ID in fields[0]:
                 if (
-                    trans_doy > 350 and int(trans_time.split("/")[0]) < 15
-                ):  # happy new year!
-                    trans_year = str(int(trans_year) + 1)
-                trans_doy = int(trans_time.split("/")[0])
-                datetime_transmit.append(
-                    dt.datetime.strptime(f"{trans_year}-{trans_time}", "%Y-%j/%H%MZ")
-                )
-
-            # data time is position time
-            if data_time[0] == "?":
-                datetime_data.append(np.nan)
+                    fields[1] != "NO"
+                ):  # sometimes NO LOCATION happens... then the record needs to be ignored.
+                    obs1.append(i)
+            elif "(" in fields[0]:  # hope that no comment lines start with '('
+                obs2.append(i)
+            # all other non-blank lines are comments
             else:
-                if data_doy > 350 and int(data_time.split("/")[0]) < 15:
-                    data_year = str(int(data_year) + 1)
-                data_doy = int(data_time.split("/")[0])
-                datetime_data.append(
-                    dt.datetime.strptime(f"{data_year}-{data_time}", "%Y-%j/%H%M")
-                )
+                comments.append(line)
 
-    for o2 in obs2:
-        if o2 - 1 in obs1:  # this makes sure that the obs2 is preceded by obs1
+        # need to keep track of the year (for both trans and data)
+        trans_year = year
+        data_year = year
+        trans_doy = 0
+        data_doy = 0
 
-            fields = fp[o2].split()
+        # pass through again and load up the lists
+        for o1 in obs1:
+            if o1 + 1 in obs2:  # this makes sure that the obs1 is followed by obs2
+                fields = fp[o1].split()
 
-            # sometimes there are "?" in the data but they are not meaningful
-            fields = list(
-                filter(lambda item: item != "?", fields)
-            )  # sometimes "?" are present
-            fields = list(
-                filter(lambda item: item != "(", fields)
-            )  # remove this from list
+                # Lat and Lon:
+                for j in range(1, 3):
+                    strLoc = fields[j]
+                    if strLoc[-1:] == "S" or strLoc[-1:] == "W":
+                        numLoc = float(strLoc[:-1]) * -1
+                    elif strLoc[-1:] == "N" or strLoc[-1:] == "E":
+                        numLoc = float(strLoc[:-1])
+                    else:
+                        print(line)
+                    if j == 1:
+                        latitude.append(numLoc)
+                    else:
+                        longitude.append(numLoc)
+                # location quality
+                loc_accuracy.append(int(fields[3]))
 
-            message_index.append(
-                int(fields[0].replace("(", "")[:-1])
-            )  # remove the "(" in 2 digit values
+                # dates/times
+                trans_time, data_time = fields[4].split("-")
 
-            # These sensors are either floating points (in scientific notation) or
-            # They are hex values  or they are integers.
-            # See manual for how to map values.  The problem is distinguishing int and hex
-            # For temperatures > -20 there will be 3 digits for int and only 2 for hex
-            #  this is the best guess, may not work always
-
-            # pressure
-            if "E+" in fields[1] or "E-" in fields[1]:
-                pressure.append(float(fields[1]))
-            else:
-                if len(fields[3]) == 3:
-                    pressure.append(int(fields[1]) * 0.1511 + 920)
+                # trans time is time of transmission
+                if trans_time[0] == "?":
+                    datetime_transmit.append(np.nan)
                 else:
-                    pressure.append(int(fields[1], 16) * 0.1511 + 920)
+                    if (
+                        trans_doy > 350 and int(trans_time.split("/")[0]) < 15
+                    ):  # happy new year!
+                        trans_year = str(int(trans_year) + 1)
+                    trans_doy = int(trans_time.split("/")[0])
+                    datetime_transmit.append(
+                        dt.datetime.strptime(
+                            f"{trans_year}-{trans_time}", "%Y-%j/%H%MZ"
+                        )
+                    )
 
-            # voltage
-            if "E+" in fields[2] or "E-" in fields[2]:
-                voltage.append(float(fields[2]))
-            else:
-                if len(fields[3]) == 3:
-                    voltage.append(int(fields[2]) * 0.2 + 6)
+                # data time is position time
+                if data_time[0] == "?":
+                    datetime_data.append(np.nan)
                 else:
-                    voltage.append(int(fields[2], 16) * 0.2 + 6)
 
-            # temperature
-            if "E+" in fields[3] or "E-" in fields[3]:
-                temperature_internal.append(float(fields[3]))
-            else:
-                if len(fields[3]) == 3:
-                    temperature_internal.append(int(fields[3]) * 0.3 - 50)
+                    # There is no year recorded in the data, only DOY
+                    # Detect and deal with year rollover in December/January
+                    # this here looks to see if the year is about to roll over.
+                    # the approach is not perfect since if the data is missing over a large
+                    # part of Dec and January these conditions won't match
+                    if data_doy > 350 and int(data_time.split("/")[0]) < 15:
+                        data_year = str(int(data_year) + 1)
+                    data_doy = int(data_time.split("/")[0])
+                    datetime_data.append(
+                        dt.datetime.strptime(f"{data_year}-{data_time}", "%Y-%j/%H%M")
+                    )
+
+        for o2 in obs2:
+            if o2 - 1 in obs1:  # this makes sure that the obs2 is preceded by obs1
+
+                fields = fp[o2].split()
+
+                # sometimes there are "?" in the data but they are not meaningful
+                fields = list(
+                    filter(lambda item: item != "?", fields)
+                )  # sometimes "?" are present
+                fields = list(
+                    filter(lambda item: item != "(", fields)
+                )  # remove this from list
+
+                message_index.append(
+                    int(fields[0].replace("(", "")[:-1])
+                )  # remove the "(" in 2 digit values
+
+                # These sensors are either floating points (in scientific notation) or
+                # They are hex values  or they are integers.
+                # See manual for how to map values.  The problem is distinguishing int and hex
+                # For temperatures > -20 there will be 3 digits for int and only 2 for hex
+                #  this is the best guess, may not work always
+
+                # pressure
+                if "E+" in fields[1] or "E-" in fields[1]:
+                    pressure.append(float(fields[1]))
                 else:
-                    temperature_internal.append(int(fields[3], 16) * 0.3 - 50)
+                    if len(fields[3]) == 3:
+                        pressure.append(int(fields[1]) * 0.1511 + 920)
+                    else:
+                        pressure.append(int(fields[1], 16) * 0.1511 + 920)
 
-    # create an empty standard data frame - sdf - filled with NAs
-    sdf = create_sdf(len(latitude))
+                # voltage
+                if "E+" in fields[2] or "E-" in fields[2]:
+                    voltage.append(float(fields[2]))
+                else:
+                    if len(fields[3]) == 3:
+                        voltage.append(int(fields[2]) * 0.2 + 6)
+                    else:
+                        voltage.append(int(fields[2], 16) * 0.2 + 6)
 
-    sdf["beacon_id"] = Path(raw_data_file).stem
-    sdf["datetime_data"] = pd.to_datetime(datetime_data, utc=True)
-    sdf["datetime_transmit"] = pd.to_datetime(datetime_transmit, utc=True)
-    sdf["latitude"] = latitude
-    sdf["longitude"] = longitude
-    sdf["temperature_internal"] = temperature_internal
-    sdf["pressure"] = pressure
-    sdf["voltage"] = voltage
-    sdf["loc_accuracy"] = loc_accuracy
+                # temperature
+                if "E+" in fields[3] or "E-" in fields[3]:
+                    temperature_internal.append(float(fields[3]))
+                else:
+                    if len(fields[3]) == 3:
+                        temperature_internal.append(int(fields[3]) * 0.3 - 50)
+                    else:
+                        temperature_internal.append(int(fields[3], 16) * 0.3 - 50)
 
-    # There is no year recorded in the data, only DOY
-    # Detect and deal with year rollover in December/January
-    # Caveat: if there are data outages around the new year, this method will not work!
+        # create an empty standard data frame - sdf - filled with NAs
+        sdf = create_sdf(len(latitude))
 
-    # # data
-    # delta = (
-    #     sdf["datetime_data"].dt.dayofyear.shift() - sdf["datetime_data"].dt.dayofyear
-    # )
-    # ind = delta.index[
-    #     delta >= 364
-    # ]  # index of the first day of the new year (in theory)
-    # for i in ind:
-    #     sdf.loc[i:, "datetime_data"] = sdf.loc[
-    #         i:, "datetime_data"
-    #     ] + pd.offsets.DateOffset(years=1)
+        sdf["beacon_id"] = Path(raw_data_file).stem
+        sdf["datetime_data"] = pd.to_datetime(datetime_data, utc=True)
+        sdf["datetime_transmit"] = pd.to_datetime(datetime_transmit, utc=True)
+        sdf["latitude"] = latitude
+        sdf["longitude"] = longitude
+        sdf["temperature_internal"] = temperature_internal
+        sdf["pressure"] = pressure
+        sdf["voltage"] = voltage
+        sdf["loc_accuracy"] = loc_accuracy
 
-    # # transmission
-    # delta = (
-    #     sdf["datetime_transmit"].dt.dayofyear.shift()
-    #     - sdf["datetime_transmit"].dt.dayofyear
-    # )
-    # ind = delta.index[
-    #     delta >= 364
-    # ]  # index of the first day of the new year (in theory)
-    # for i in ind:
-    #     sdf.loc[i:, "datetime_transmit"] = sdf.loc[
-    #         i:, "datetime_transmit"
-    #     ] + pd.offsets.DateOffset(years=1)
-
-    # TODO - save a file with comments
-    #  Dump comments somewhere
-    print(comments)
-
-    #    except:
-    #        print(f"Problem with raw data file {raw_data_file}, check formatting")
-    #        sys.exit(1)
+        if len(comments) > 0:
+            log.info("Start of comments from raw ARGOS file:")
+            for comment in comments:
+                log.info(comment)
+            log.info("End of comments from raw ARGOS file:")
+    except:
+        log.error(f"Problem with raw data file {raw_data_file}, check formatting")
+        sys.exit(1)
 
     return sdf
 
 
-def calib_iridium(raw_data_file):
+def calib_iridium(raw_data_file, log=None):
     """
     Convert raw data from Metocean iCALIB format to standardized dataframe.
 
@@ -434,6 +439,10 @@ def calib_iridium(raw_data_file):
         Report Body
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -485,7 +494,7 @@ def calib_iridium(raw_data_file):
     return sdf
 
 
-def canatec(raw_data_file):
+def canatec(raw_data_file, log=None):
     """
     Convert raw data from Canatec format to standardized dataframe.
 
@@ -523,6 +532,10 @@ def canatec(raw_data_file):
         WindDirection
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -559,7 +572,7 @@ def canatec(raw_data_file):
     return sdf
 
 
-def icebeacon(raw_data_file):
+def icebeacon(raw_data_file, log=None):
     """
     Convert raw data from Metocean ICEB-I-XA format to standardized dataframe.
 
@@ -595,6 +608,10 @@ def icebeacon(raw_data_file):
         ModemVoltage
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -641,7 +658,7 @@ def icebeacon(raw_data_file):
     return sdf
 
 
-def pathfinder_ccore(raw_data_file):
+def pathfinder_ccore(raw_data_file, log=None):
     """
     Convert raw data from Pathfinder C-CORE format to standardized dataframe.
 
@@ -666,6 +683,10 @@ def pathfinder_ccore(raw_data_file):
         Drogue Depth (m)
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -689,7 +710,7 @@ def pathfinder_ccore(raw_data_file):
     return sdf
 
 
-def cryologger(raw_data_file):
+def cryologger(raw_data_file, log=None):
     """
     Convert raw data from Cryologger format to standardized dataframe.
 
@@ -730,6 +751,10 @@ def cryologger(raw_data_file):
         transmitDuration
         messageCounter
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -783,7 +808,7 @@ def cryologger(raw_data_file):
     return sdf
 
 
-def iabp(raw_data_file):
+def iabp(raw_data_file, log=None):
     """
     Convert raw data from IABP website format to standardized dataframe.
 
@@ -815,6 +840,10 @@ def iabp(raw_data_file):
         Ta
         Ts
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -852,7 +881,7 @@ def iabp(raw_data_file):
     return sdf
 
 
-def iip(raw_data_file):
+def iip(raw_data_file, log=None):
     """
     Convert raw data from Metocean IIP GlobalStar format to standardized dataframe.
 
@@ -875,6 +904,10 @@ def iip(raw_data_file):
         LATITUDE
         LONGITUDE
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -995,7 +1028,7 @@ def iip(raw_data_file):
 #     return sdf
 
 
-def wirl_sbd(raw_data_file):
+def wirl_sbd(raw_data_file, log=None):
     """
     Convert raw data from WIRL SBD decode format to standardized dataframe.
 
@@ -1026,6 +1059,10 @@ def wirl_sbd(raw_data_file):
         FormatID
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1066,7 +1103,7 @@ def wirl_sbd(raw_data_file):
     return sdf
 
 
-def rockstar(raw_data_file):
+def rockstar(raw_data_file, log=None):
     """
     Convert raw data from Rockstar/Yellowbrick format to standardized dataframe.
 
@@ -1089,6 +1126,10 @@ def rockstar(raw_data_file):
         Longitude
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1114,7 +1155,7 @@ def rockstar(raw_data_file):
     return sdf
 
 
-def solara(raw_data_file):
+def solara(raw_data_file, log=None):
     """
     Convert raw data from Solara format to standardized dataframe.
 
@@ -1140,6 +1181,10 @@ def solara(raw_data_file):
             format_2 = "%d/%m/%Y %H:%M:%S"
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1162,7 +1207,7 @@ def solara(raw_data_file):
     return sdf
 
 
-def svp(raw_data_file):
+def svp(raw_data_file, log=None):
     """
     Convert raw data from Metocean SVP format to standardized dataframe.
 
@@ -1208,6 +1253,10 @@ def svp(raw_data_file):
         Report Body / Report.Body
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1263,7 +1312,7 @@ def svp(raw_data_file):
     return sdf
 
 
-def bio(raw_data_file):
+def bio(raw_data_file, log=None):
     """
     Convert raw data from BIO Icetracker2 format to standardized dataframe.
 
@@ -1286,6 +1335,10 @@ def bio(raw_data_file):
     LATITUDE
     LONGITUDE
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1320,7 +1373,7 @@ def bio(raw_data_file):
     return sdf
 
 
-def navidatum(raw_data_file):
+def navidatum(raw_data_file, log=None):
     """
     Convert raw data from Skywave DMR800L format to standardized dataframe.
 
@@ -1341,6 +1394,10 @@ def navidatum(raw_data_file):
     Longitude
 
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file, index_col=False, skipinitialspace=True)
 
@@ -1366,7 +1423,7 @@ def navidatum(raw_data_file):
 
 
 '''
-def fn_template(raw_data_file):
+def fn_template(raw_data_file, log=None):
     """
     Convert raw data from <PROVIDER/MODEL> format to standardized dataframe.
 
@@ -1384,6 +1441,10 @@ def fn_template(raw_data_file):
     ----------------------------------
     <INSERT HERE>
     """
+    # set up the logger to output nowhere if None
+    if log == None:
+        log = nolog()
+        
     # read in the raw data frame - rdf
     rdf = pd.read_csv(raw_data_file,  index_col=False, skipinitialspace=True)
 

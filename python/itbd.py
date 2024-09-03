@@ -112,7 +112,8 @@ class Meta:
         try:
             df = pd.read_csv(meta_file)
         except:
-            pass
+            logger.error(f"Failed to read {self.meta_file}, exiting... ")
+            sys.exit(1)
         self.df = df
         if logger is None:
             logger = nolog()
@@ -680,26 +681,28 @@ class Track:
 
     def output(self, types=["csv"], path_output=".", file_output=None):
         """
-        Output the track to a file.
+                Output the track to a file.
 
-        Note the default is a csv (non-spatial) format.  Other options include track points
-        (_pt) or track lines (_ln) in a kml or gpkg file [let's move on from shapefiles, eh!].
-        See types option below.   Note that there is no fancy styling of the data.
+                Note the default is a csv (non-spatial) format.  Other options include track points
+                (_pt) or track lines (_ln) in a kml or gpkg file [let's move on from shapefiles, eh!].
+                See types option below.   Note that there is no fancy styling of the data.
 
-        The script checks for an existing file.  If one is there, that will be logged.
-        The file will not be overwritten.
+                The script checks for an existing file.  If one is there, that will be logged.
+                The file will not be overwritten.
 
-        Parameters
-        ----------
-        types : list of str, optional
-            list of output types to generate ['csv', 'pt_kml', 'ln_kml', 'pt_gpkg','ln_gpkg']. The default is 'csv'.
-        path_output : str, optional
-            Path to put the output. The default is the current directory
-        file_output : str, optional
-            filename of output. The default is None, which will autogenerate on the Beacon ID
-        Returns
-        -------
-        None.
+                Parameters
+                ----------
+                types : list of st        # reset the index, which copies the
+                        self.data.reset_index(inplace=True)
+        r, optional
+                    list of output types to generate ['csv', 'pt_kml', 'ln_kml', 'pt_gpkg','ln_gpkg']. The default is 'csv'.
+                path_output : str, optional
+                    Path to put the output. The default is the current directory
+                file_output : str, optional
+                    filename of output. The default is None, which will autogenerate on the Beacon ID
+                Returns
+                -------
+                None.
 
         """
         if not file_output:
@@ -758,64 +761,108 @@ class Track:
             else:
                 self.log.error("Track output as trackline kml failed!")
 
-    def filter(self):
+    def resample(self, timestep="D", agg_function=None, first=True):
         """
-        Filter the track based on some pandas filter step
-        self.data[latitude < X]  or loc accuracy... 
-        # need to re-calculate stats and other things after
+        Resample track to a given time step.
+
+        Timestep can be D for daily or h for hourly or multiples of D or h (eg '7D', '12h')
+        After resampling other track properties will be refreshed.
+        Other agg_fuctions might be wanted (max?, min?) but these are not implemented. 
+        One day maybe interpolations? 
+        
+        Since the track data and properies will be overwritten, it is a good idea to make a copy first: 
+            test_track = track
+            test_track.resample(timestep="6h")
+           
+        Note this has not been thoroughly tested! 
+            
+        Parameters
+        ----------
+        timestep : str, optional
+            Give the code for the timestep to sample to. The default is "D". See above.
+        agg_function : str, optional
+            Aggregation function: median, mean, None. The default is None.
+        first : bool, optional
+            If agg_fuction is none, or for columns that cannot be aggreaged, \
+                take first (True) or last (False) value for the time period. The default is True.
+        
+        Returns
+        -------
+        None.
 
         """
-
-    def resample(self):
-        """
-        resample to x time step
-
-        time step? D, H, n days n hours? etc
-        need a keyword for mean/median/none
-        need a keyword for first/last
-        need a keyword for interp - T/F
-
-        sample all numerical data based on mean, median or none (which would then be first or last)
-
-        """
-
         sdf = self.data
         # need to have a datetime index or use the 'on' keyword
         sdf = sdf.set_index("datetime_data")
+        sdf["u"] = np.sin(np.radians(sdf.heading))
+        sdf["v"] = np.cos(np.radians(sdf.heading))
 
         # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html
         # Note that you can control whether bin intervals are closed on left or right
         # and which label to use.  e.g., daily, closed left with left label:
         #   All data from 2024-08-02 00:00:00 to 2024-08-02 23:59:59 are in August 2.
-        # Weekly and Montly have different behaviour by default so use use '7D' instead 
+        # Weekly and Montly have different behaviour by default so use use '7D' instead
         # of 'W' for weekly resampling for consistency
         # https://pandas.pydata.org/pandas-docs/stable/reference/groupby.html#api-groupby
 
+        if agg_function == None:
+            if first:
+                number_f = "first"
+            else:
+                number_f = "last"
+        elif agg_function == "mean":
+            number_f = "mean"
+        elif agg_function == "median":
+            number_f = "median"
+        else:
+            print("error")
+        if first:
+            string_f = "first"
+        else:
+            string_f = "last"
 
         # this sort of thing is trivial
         sdf.resample("D").last()
         sdf.resample("D").first()
 
         # with mixed data types the way you aggregate needs to be controlled for each column
-        d = sdf.resample("D").agg(
-            beacon_id=("beacon_id", "first"),
-            datetime_transmit = ('datetime_transmit', )
-            latitude=("latitude", "median"),
-            longitude=("longitude", "median"),
-            # 'temperature_air', 'temperature_internal', 'temperature_surface',
-            # 'pressure', 'pitch', 'roll', 
-            # roll=("roll", "median"),
-            # 'heading', 'satellites', 'voltage',
-            # 'loc_accuracy',
+        sdf_ = sdf.resample(timestep).agg(
+            beacon_id=("beacon_id", string_f),
+            datetime_transmit=("datetime_transmit", number_f),
+            latitude=("latitude", number_f),
+            longitude=("longitude", number_f),
+            temperature_air=("temperature_air", number_f),
+            temperature_internal=("temperature_internal", number_f),
+            temperature_surface=("temperature_surface", number_f),
+            pressure=("pressure", number_f),
+            pitch=("pitch", number_f),
+            roll=("roll", number_f),
+            heading=("heading", string_f),
+            satellites=("satellites", number_f),
+            voltage=("voltage", number_f),
+            loc_accuracy=("loc_accuracy", number_f),
+            u=("u", number_f),
+            v=("v", number_f),
         )
-        sdf.latitude.resample("D").median()  # resample lat to daily median position
-        sdf.latitude.resample("W").mean()  # resample lat to weekly mean position
-        sdf.latitude.resample(
-            "H"
-        ).median().interpolate()  # resample to hourly and interpolate missing data
+
+        sdf_["heading"] = (360 + np.rad2deg(np.atan2(sdf_.u, sdf_.v))) % 360
+
+        self.data = sdf_.drop(["u", "v"], axis=1)
 
         # after doing the resampling it will be important to run:
+        self.refresh()
 
+    def refresh(self):
+        """
+        Refresh all the stats and speed calcs, etc.
+
+        Do this after you change anything in the dataframe
+        track.data = track.data[track.data.loc_accuracy < 2]
+
+        Returns
+        -------
+        None.
+        """
         # reset the index, which copies the
         self.data.reset_index(inplace=True)
 
@@ -825,3 +872,52 @@ class Track:
         # if you have geospatial data, it must be recreated
         if self.geoed:
             self.geo()
+
+        self.stats()
+
+    def track_metadata(self, csv_export=False):
+        """
+        Make a dataframe of the known track metadata.
+
+        Parameters
+        ----------
+        model : bool, optional
+            Include the model metadata as well (what sensor data are available). The default is False.
+
+
+        Returns
+        -------
+        track_meta_df : pandas dataframe
+            A dataframe with the track metadata
+
+        """
+        # Make a dictionary
+        track_meta_dict = {
+            "year": self.year,
+            "id": self.id,
+            "beacon_id": self.beacon_id,
+            "observations": self.observations,
+            "track_start": self.data_start,
+            "track_end": self.data_end,
+            "duration": self.duration,
+            "latitude_start": self.latitude_start,
+            "longitude_start": self.longitude_start,
+            "latitude_end": self.latitude_end,
+            "longitude_end": self.latitude_end,
+            "distance": self.distance,
+            "reader": self.reader,
+        }
+
+
+reader
+beacon_wmo
+beacon_make
+beacon_model
+beacon_transmitter
+temperature_int
+temperature_surface
+temperature_air
+pressure
+pitch
+roll
+heading
